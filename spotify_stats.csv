@@ -1,21 +1,26 @@
-artist_name,followers,popularity,genres,spotify_url,timestamp
-Foo Fighters,12763953,79,"rock, post-grunge, alternative rock, grunge",https://open.spotify.com/artist/7jy3rLJdDQY21OgRLCZ9sD,2025-08-07 17:41:51
-Weezer,4448022,77,alternative rock,https://open.spotify.com/artist/3jOstUTkEu2JkjvRdBA5Gu,2025-08-07 17:41:51
-Kendrick Lamar,43036572,94,"hip hop, west coast hip hop",https://open.spotify.com/artist/2YZyLoL8N0Wb9xBt1NhZWg,2025-08-07 17:41:51
-Bad Bunny,98754266,100,"reggaeton, trap latino, urbano latino, latin",https://open.spotify.com/artist/4q3ewBCX7sLwd24euuV69X,2025-08-07 17:41:51
-Taylor Swift,140951936,99,,https://open.spotify.com/artist/06HL4z0CvFAxyc27GXpf02,2025-08-07 17:41:51
-Foo Fighters,12763953,79,"rock, post-grunge, alternative rock, grunge",https://open.spotify.com/artist/7jy3rLJdDQY21OgRLCZ9sD,2025-08-07 17:42:37
-Weezer,4448022,77,alternative rock,https://open.spotify.com/artist/3jOstUTkEu2JkjvRdBA5Gu,2025-08-07 17:42:37
-Kendrick Lamar,43036572,94,"hip hop, west coast hip hop",https://open.spotify.com/artist/2YZyLoL8N0Wb9xBt1NhZWg,2025-08-07 17:42:37
-Bad Bunny,98754266,100,"reggaeton, trap latino, urbano latino, latin",https://open.spotify.com/artist/4q3ewBCX7sLwd24euuV69X,2025-08-07 17:42:37
-Taylor Swift,140951936,99,,https://open.spotify.com/artist/06HL4z0CvFAxyc27GXpf02,2025-08-07 17:42:37
-"Foo Fighters","12765963","79","rock, post-grunge, alternative rock, grunge","https://open.spotify.com/artist/7jy3rLJdDQY21OgRLCZ9sD","2025-08-09 00:11:29"
-"Weezer","4449924","77","alternative rock","https://open.spotify.com/artist/3jOstUTkEu2JkjvRdBA5Gu","2025-08-09 00:11:29"
-"Kendrick Lamar","43058757","94","hip hop, west coast hip hop","https://open.spotify.com/artist/2YZyLoL8N0Wb9xBt1NhZWg","2025-08-09 00:11:29"
-"Bad Bunny","98802871","100","reggaeton, trap latino, urbano latino, latin","https://open.spotify.com/artist/4q3ewBCX7sLwd24euuV69X","2025-08-09 00:11:29"
-"Taylor Swift","140998430","99","","https://open.spotify.com/artist/06HL4z0CvFAxyc27GXpf02","2025-08-09 00:11:29"
-"Foo Fighters","12770166","79","rock, post-grunge, alternative rock, grunge","https://open.spotify.com/artist/7jy3rLJdDQY21OgRLCZ9sD","2025-08-11 02:09:49"
-"Weezer","4453823","77","alternative rock","https://open.spotify.com/artist/3jOstUTkEu2JkjvRdBA5Gu","2025-08-11 02:09:49"
-"Kendrick Lamar","43102307","94","hip hop, west coast hip hop","https://open.spotify.com/artist/2YZyLoL8N0Wb9xBt1NhZWg","2025-08-11 02:09:49"
-"Bad Bunny","98892761","100","reggaeton, trap latino, urbano latino, latin","https://open.spotify.com/artist/4q3ewBCX7sLwd24euuV69X","2025-08-11 02:09:49"
-"Taylor Swift","141096400","99","","https://open.spotify.com/artist/06HL4z0CvFAxyc27GXpf02","2025-08-11 02:09:49"
+"artist_name","followers","popularity","genres","spotify_url","timestamp"
+"Foo Fighters","12763953","79","rock, post-grunge, alternative rock, grunge","https://open.spotify.com/artist/7jy3rLJdDQY21OgRLCZ9sD","2025-08-07 17:41:51+00:00"
+"Weezer","4448022","77","alternative rock","https://open.spotify.com/artist/3jOstUTkEu2JkjvRdBA5Gu","2025-08-07 17:41:51+00:00"
+"Kendrick Lamar","43036572","94","hip hop, west coast hip hop","https://open.spotify.com/artist/2YZyLoL8N0Wb9xBt1NhZWg","2025-08-07 17:41:51+00:00"
+"Bad Bunny","98754266","100","reggaeton, trap latino, urbano latino, latin","https://open.spotify.com/artist/4q3ewBCX7sLwd24euuV69X","2025-08-07 17:41:51+00:00"
+"Taylor Swift","140951936","99","","https://open.spotify.com/artist/06HL4z0CvFAxyc27GXpf02","2025-08-07 17:41:51+00:00"
+"Foo Fighters","12763953","79","rock, post-grunge, alternative rock, grunge","https://open.spotify.com/artist/7jy3rLJdDQY21OgRLCZ9sD","2025-08-07 17:42:37+00:00"
+"Weezer","4448022","77","alternative rock","https://open.spotify.com/artist/3jOstUTkEu2JkjvRdBA5Gu","2025-08-07 17:42:37+00:00"
+"Kendrick Lamar","43036572","94","hip hop, west coast hip hop","https://open.spotify.com/artist/2YZyLoL8N0Wb9xBt1NhZWg","2025-08-07 17:42:37+00:00"
+"Bad Bunny","98754266","100","reggaeton, trap latino, urbano latino, latin","https://open.spotify.com/artist/4q3ewBCX7sLwd24euuV69X","2025-08-07 17:42:37+00:00"
+"Taylor Swift","140951936","99","","https://open.spotify.com/artist/06HL4z0CvFAxyc27GXpf02","2025-08-07 17:42:37+00:00"
+"Foo Fighters","12765963","79","rock, post-grunge, alternative rock, grunge","https://open.spotify.com/artist/7jy3rLJdDQY21OgRLCZ9sD","2025-08-09 00:11:29+00:00"
+"Weezer","4449924","77","alternative rock","https://open.spotify.com/artist/3jOstUTkEu2JkjvRdBA5Gu","2025-08-09 00:11:29+00:00"
+"Kendrick Lamar","43058757","94","hip hop, west coast hip hop","https://open.spotify.com/artist/2YZyLoL8N0Wb9xBt1NhZWg","2025-08-09 00:11:29+00:00"
+"Bad Bunny","98802871","100","reggaeton, trap latino, urbano latino, latin","https://open.spotify.com/artist/4q3ewBCX7sLwd24euuV69X","2025-08-09 00:11:29+00:00"
+"Taylor Swift","140998430","99","","https://open.spotify.com/artist/06HL4z0CvFAxyc27GXpf02","2025-08-09 00:11:29+00:00"
+"Foo Fighters","12770166","79","rock, post-grunge, alternative rock, grunge","https://open.spotify.com/artist/7jy3rLJdDQY21OgRLCZ9sD","2025-08-11 02:09:49+00:00"
+"Weezer","4453823","77","alternative rock","https://open.spotify.com/artist/3jOstUTkEu2JkjvRdBA5Gu","2025-08-11 02:09:49+00:00"
+"Kendrick Lamar","43102307","94","hip hop, west coast hip hop","https://open.spotify.com/artist/2YZyLoL8N0Wb9xBt1NhZWg","2025-08-11 02:09:49+00:00"
+"Bad Bunny","98892761","100","reggaeton, trap latino, urbano latino, latin","https://open.spotify.com/artist/4q3ewBCX7sLwd24euuV69X","2025-08-11 02:09:49+00:00"
+"Taylor Swift","141096400","99","","https://open.spotify.com/artist/06HL4z0CvFAxyc27GXpf02","2025-08-11 02:09:49+00:00"
+"Foo Fighters","12770166","79","rock, post-grunge, alternative rock, grunge","https://open.spotify.com/artist/7jy3rLJdDQY21OgRLCZ9sD","2025-08-11 02:33:53+00:00"
+"Weezer","4453823","77","alternative rock","https://open.spotify.com/artist/3jOstUTkEu2JkjvRdBA5Gu","2025-08-11 02:33:53+00:00"
+"Kendrick Lamar","43102307","94","hip hop, west coast hip hop","https://open.spotify.com/artist/2YZyLoL8N0Wb9xBt1NhZWg","2025-08-11 02:33:53+00:00"
+"Bad Bunny","98892761","100","reggaeton, trap latino, urbano latino, latin","https://open.spotify.com/artist/4q3ewBCX7sLwd24euuV69X","2025-08-11 02:33:53+00:00"
+"Taylor Swift","141096400","99","","https://open.spotify.com/artist/06HL4z0CvFAxyc27GXpf02","2025-08-11 02:33:53+00:00"

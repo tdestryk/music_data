@@ -1,230 +1,251 @@
 # spotify_dashboard.py
+# Spotify stats with links, images, Δ toggle, auto-zoom, 7d change, and polished charts.
+
 import os
 import pandas as pd
-import numpy as np
 import streamlit as st
+from dotenv import load_dotenv
+from spotipy import Spotify
+from spotipy.oauth2 import SpotifyClientCredentials
+import altair as alt
 
-# ---------- Page setup ----------
-st.set_page_config(page_title="Spotify Artist Stats Dashboard", layout="wide", page_icon="🎧")
+st.set_page_config(page_title="Spotify Artist Stats", page_icon="🎧", layout="wide")
 
-SPOTIFY_CSV = os.getenv("SPOTIFY_CSV", "spotify_stats.csv")
-TOP_TRACKS_CSV = os.getenv("TOP_TRACKS_CSV", "spotify_top_tracks.csv")
+# ---------- Secrets ----------
+load_dotenv()
+SPOTIFY_CLIENT_ID = os.getenv("SPOTIFY_CLIENT_ID")
+SPOTIFY_CLIENT_SECRET = os.getenv("SPOTIFY_CLIENT_SECRET")
+if not SPOTIFY_CLIENT_ID or not SPOTIFY_CLIENT_SECRET:
+    st.error("Missing SPOTIFY_CLIENT_ID / SPOTIFY_CLIENT_SECRET in .env or host secrets.")
+    st.stop()
 
-# ---------- Helpers ----------
+CSV_PATH   = "spotify_stats.csv"
+LINKS_CSV  = "artist_links.csv"   # csv with artist_name + links (and optional color_hex)
 
-def read_csv_safe(path: str) -> pd.DataFrame:
-    """
-    Read a CSV resiliently:
-      - tolerate extra columns/commas
-      - don't crash on bad rows
-      - auto-parse timestamp column when present
-    """
-    if not os.path.exists(path):
-        return pd.DataFrame()
+# ---------- Time & CSV helpers ----------
+def now_utc() -> pd.Timestamp: return pd.Timestamp.now(tz="UTC")
+def to_utc(x) -> pd.Series: return pd.to_datetime(x, utc=True, errors="coerce")
 
-    try:
-        df = pd.read_csv(
-            path,
-            engine="python",                # more forgiving parser
-            encoding="utf-8",
-            on_bad_lines="skip" if "on_bad_lines" in pd.read_csv.__code__.co_varnames else None,
-        )
-    except TypeError:
-        # in case this pandas doesn't support on_bad_lines kw
-        df = pd.read_csv(path, engine="python", encoding="utf-8")
-
-    # normalize timestamp if present
+def normalize_csv(p: str):
+    if not os.path.exists(p): return
+    df = pd.read_csv(p)
     if "timestamp" in df.columns:
-        df["timestamp"] = pd.to_datetime(df["timestamp"], errors="coerce", utc=True)
-        df = df.dropna(subset=["timestamp"])
+        df["timestamp"] = to_utc(df["timestamp"]).dt.strftime("%Y-%m-%dT%H:%M:%SZ")
+        df.to_csv(p, index=False)
 
+def load_history(p: str) -> pd.DataFrame:
+    if not os.path.exists(p):
+        return pd.DataFrame(columns=["timestamp","artist_name","artist_id","followers","popularity","genres","avg_top_track_pop","image_url"])
+    df = pd.read_csv(p)
+    if "timestamp" in df.columns: df["timestamp"] = to_utc(df["timestamp"])
     return df
 
+def save_history(p: str, df: pd.DataFrame):
+    out = df.copy()
+    out["timestamp"] = to_utc(out["timestamp"]).dt.strftime("%Y-%m-%dT%H:%M:%SZ")
+    out.to_csv(p, index=False)
 
-def filter_window(df: pd.DataFrame, hours: int, ts_col: str = "timestamp") -> pd.DataFrame:
-    """Return rows within the last N hours, using UTC."""
-    if df.empty or ts_col not in df.columns:
-        return df
+def upsert_snapshot(p: str, row: dict):
+    hist = load_history(p)
+    new  = pd.DataFrame([row])
+    c = pd.concat([hist, new], ignore_index=True)
+    c["timestamp"] = to_utc(c["timestamp"])
+    c["ts_min"] = c["timestamp"].dt.floor("T")
+    c = (c.sort_values("timestamp")
+          .drop_duplicates(subset=["artist_id","ts_min"], keep="last"))
+    c.drop(columns=["ts_min"], inplace=True)
+    save_history(p, c)
 
-    end = pd.Timestamp.utcnow().tz_localize("UTC")
-    start = end - pd.Timedelta(hours=hours)
+def filter_window(df: pd.DataFrame, hours: int) -> pd.DataFrame:
+    if df.empty: return df
+    ts = to_utc(df["timestamp"])
+    df = df.loc[ts.notna()].copy(); ts = ts.loc[ts.notna()]
+    end = now_utc(); start = end - pd.Timedelta(hours=hours)
+    return df.loc[(ts >= start) & (ts <= end)].copy()
 
-    # ensure tz-aware
-    if df[ts_col].dt.tz is None:
-        df[ts_col] = df[ts_col].dt.tz_localize("UTC")
+def load_links() -> pd.DataFrame:
+    if not os.path.exists(LINKS_CSV): return pd.DataFrame()
+    df = pd.read_csv(LINKS_CSV)
+    # normalize expected columns
+    for need in ["artist_name","spotify_url","youtube_url","facebook_url","instagram_url",
+                 "tiktok_url","twitter_url","website_url","color_hex"]:
+        if need not in df.columns: df[need] = ""
+    return df
 
-    return df[(df[ts_col] >= start) & (df[ts_col] <= end)].copy()
+# ---------- Spotify API ----------
+@st.cache_resource(show_spinner=False)
+def get_spotify() -> Spotify:
+    auth = SpotifyClientCredentials(client_id=SPOTIFY_CLIENT_ID, client_secret=SPOTIFY_CLIENT_SECRET)
+    return Spotify(auth_manager=auth)
 
+sp = get_spotify()
 
-@st.cache_data(show_spinner=False)
-def load_data():
-    artists = read_csv_safe(SPOTIFY_CSV)
-    tracks = read_csv_safe(TOP_TRACKS_CSV)
+def search_artist_id(name: str) -> str | None:
+    res = sp.search(q=name, type="artist", limit=1)
+    items = res.get("artists", {}).get("items", [])
+    return items[0]["id"] if items else None
 
-    # normalize column names we rely on
-    want_artist_cols = ["artist_name", "followers", "popularity", "spotify_url", "timestamp"]
-    for col in want_artist_cols:
-        if col not in artists.columns:
-            artists[col] = np.nan
+def fetch_snapshot(artist_id: str) -> dict:
+    a = sp.artist(artist_id)
+    followers = a.get("followers", {}).get("total")
+    pop = a.get("popularity")
+    name = a.get("name", "")
+    genres = ", ".join(a.get("genres", []))
+    img = ""
+    imgs = a.get("images") or []
+    if imgs: img = imgs[0].get("url", "")
+    tt = sp.artist_top_tracks(artist_id, country="US").get("tracks", [])
+    pops = [t.get("popularity", 0) for t in tt]
+    avg_top = round(sum(pops)/len(pops), 2) if pops else None
+    return {
+        "timestamp": now_utc(),
+        "artist_name": name,
+        "artist_id": artist_id,
+        "followers": followers,
+        "popularity": pop,
+        "genres": genres,
+        "avg_top_track_pop": avg_top,
+        "image_url": img,
+    }
 
-    # force dtypes
-    for col in ["followers", "popularity"]:
-        artists[col] = pd.to_numeric(artists[col], errors="coerce")
+# ---------- UI ----------
+st.title("🎧 Spotify Dashboard")
 
-    # genres may or may not be present
-    if "genres" not in artists.columns:
-        artists["genres"] = np.nan
+with st.sidebar:
+    st.markdown("### Data Tools")
+    if st.button("🛠 Fix timestamps (normalize)"):
+        normalize_csv(CSV_PATH); st.success("CSV timestamps normalized to UTC ISO.")
+    st.caption("All times in UTC")
 
-    # tracks normalization
-    want_track_cols = ["artist_name", "track_name", "track_popularity", "track_url", "timestamp"]
-    for col in want_track_cols:
-        if col not in tracks.columns:
-            tracks[col] = np.nan
-    tracks["track_popularity"] = pd.to_numeric(tracks["track_popularity"], errors="coerce")
+default_artists = ["Bad Bunny","Foo Fighters","Kendrick Lamar","Taylor Swift","Weezer"]
+artists = st.multiselect("Select artists", default_artists, default=default_artists)
 
-    return artists, tracks
+c1, c2, c3 = st.columns(3)
+with c1: hours = st.slider("Time window (hours)", 1, 168, 72)
+with c2: show_delta = st.toggle("Show Δ change", value=False)
+with c3: auto_zoom = st.toggle("Auto-zoom y-axis", value=True)
 
+if st.button("🔄 Reload data") and artists:
+    with st.spinner("Fetching latest Spotify stats…"):
+        for name in artists:
+            aid = search_artist_id(name)
+            if not aid:
+                st.warning(f"Could not find artist id for {name}")
+                continue
+            upsert_snapshot(CSV_PATH, fetch_snapshot(aid))
+    st.success("Updated snapshots!"); st.rerun()
 
-def latest_snapshot(artists_df: pd.DataFrame) -> pd.DataFrame:
-    """Last row per artist by timestamp."""
-    if artists_df.empty:
-        return artists_df
-    return (
-        artists_df.sort_values("timestamp")
-                  .groupby("artist_name", as_index=False)
-                  .tail(1)
-                  .reset_index(drop=True)
-    )
+# ---------- Data prep ----------
+normalize_csv(CSV_PATH)
+hist = load_history(CSV_PATH)
+view = hist[hist["artist_name"].isin(artists)].copy()
+view = filter_window(view, hours)
+if view.empty:
+    st.info("No rows in window. Reload data or widen the window.")
+    st.stop()
 
+# deltas
+view = view.sort_values(["artist_name","timestamp"])
+view["followers_delta"]  = view.groupby("artist_name")["followers"].diff()
+view["popularity_delta"] = view.groupby("artist_name")["popularity"].diff()
 
-def delta_by_artist(window_df: pd.DataFrame) -> pd.DataFrame:
-    """Compute follower delta per artist inside the window."""
-    if window_df.empty:
-        return window_df
+# 7-day change
+cut = now_utc() - pd.Timedelta(days=7)
+seven = hist[hist["artist_name"].isin(artists)].copy()
+seven = seven[to_utc(seven["timestamp"]) >= cut]
+agg = (seven.sort_values("timestamp")
+             .groupby("artist_name")
+             .agg(last_followers=("followers","last"),
+                  first_followers=("followers","first"),
+                  last_pop=("popularity","last"),
+                  first_pop=("popularity","first"))
+             .reset_index())
+agg["followers_Δ7d"] = agg["last_followers"] - agg["first_followers"]
+agg["popularity_Δ7d"] = agg["last_pop"] - agg["first_pop"]
 
-    g = window_df.sort_values("timestamp").groupby("artist_name", as_index=False)
-    agg = g.agg(first_followers=("followers", "first"),
-                last_followers=("followers", "last"),
-                first_pop=("popularity", "first"),
-                last_pop=("popularity", "last"))
-    agg["followers_delta"] = agg["last_followers"] - agg["first_followers"]
-    with np.errstate(divide="ignore", invalid="ignore"):
-        agg["followers_pct"] = np.where(
-            agg["first_followers"] > 0,
-            (agg["followers_delta"] / agg["first_followers"]) * 100.0,
-            np.nan
-        )
-    agg["pop_delta"] = agg["last_pop"] - agg["first_pop"]
-    return agg
+st.subheader("Δ in Last 7 Days (Spotify)")
+st.dataframe(agg[["artist_name","last_followers","followers_Δ7d","last_pop","popularity_Δ7d"]],
+             use_container_width=True)
 
+# merge links & latest
+links_df = load_links()
+latest = (view.sort_values("timestamp")
+              .groupby("artist_name", as_index=False)
+              .tail(1)
+              .sort_values("artist_name"))
+if not links_df.empty:
+    latest = latest.merge(links_df, on="artist_name", how="left")
 
-# ---------- UI Header ----------
-
-st.title("🎧 Spotify Artist Stats Dashboard")
-
-colh1, colh2 = st.columns([1, 1])
-with colh1:
-    if st.button("🔄 Reload data", use_container_width=False):
-        st.cache_data.clear()
-        st.rerun()
-
-artists_df, tracks_df = load_data()
-
-# Artist multi-select
-all_artists = sorted(artists_df["artist_name"].dropna().unique().tolist())
-default_sel = all_artists[:5]
-sel = st.multiselect("Choose artists to display", all_artists, default=default_sel)
-
-# Time window
-win = st.slider("Time window (hours)", min_value=1, max_value=168, value=72)
-
-# Apply filters
-artists_sel = artists_df[artists_df["artist_name"].isin(sel)] if sel else artists_df
-artists_win = filter_window(artists_sel, win, "timestamp")
-
-# Compute snapshots safely (avoid NameError)
-latest = latest_snapshot(artists_sel)
-
-# Summary metrics
-m1, m2, m3 = st.columns(3)
-if latest.empty:
-    m1.metric("Total Followers", "0")
-    m2.metric("Avg Popularity", "0.0")
-    m3.metric("Artists in View", "0")
-else:
-    m1.metric("Total Followers", f"{int(latest['followers'].fillna(0).sum()):,}")
-    m2.metric("Avg Popularity", f"{latest['popularity'].dropna().mean():.1f}")
-    m3.metric("Artists in View", f"{latest['artist_name'].nunique()}")
-
-# ---------- Tabs ----------
-tab1, tab2, tab3, tab4 = st.tabs(
-    ["📊 Current Stats Summary", "📈 Followers Over Time", "🆚 Compare Artists", "🎵 Top Tracks"]
+st.subheader("Latest Snapshot (with links)")
+st.data_editor(
+    latest[["image_url","artist_name","followers","followers_delta","popularity","popularity_delta",
+            "avg_top_track_pop","genres","timestamp","spotify_url","youtube_url","facebook_url",
+            "instagram_url","tiktok_url","twitter_url","website_url"]],
+    hide_index=True,
+    use_container_width=True,
+    column_config={
+        "image_url":   st.column_config.ImageColumn("Image", help="Artist image"),
+        "spotify_url": st.column_config.LinkColumn("Spotify"),
+        "youtube_url": st.column_config.LinkColumn("YouTube"),
+        "facebook_url":st.column_config.LinkColumn("Facebook"),
+        "instagram_url":st.column_config.LinkColumn("Instagram"),
+        "tiktok_url":  st.column_config.LinkColumn("TikTok"),
+        "twitter_url": st.column_config.LinkColumn("X/Twitter"),
+        "website_url": st.column_config.LinkColumn("Website"),
+    }
 )
 
-with tab1:
-    st.subheader("Current Stats Summary")
-    if latest.empty:
-        st.info("No artist snapshots found in this time window.")
-    else:
-        cols = ["artist_name", "followers", "popularity", "genres", "spotify_url", "timestamp"]
-        show = [c for c in cols if c in latest.columns]
-        st.dataframe(latest[show].sort_values("followers", ascending=False), use_container_width=True)
+# ---------- Color map ----------
+# If links CSV has color_hex per artist, use it; else fall back to Tableau scheme
+artist_colors = {}
+if not links_df.empty and "color_hex" in links_df.columns:
+    for _, r in links_df.dropna(subset=["artist_name"]).iterrows():
+        if isinstance(r.get("color_hex"), str) and r["color_hex"].strip():
+            artist_colors[r["artist_name"]] = r["color_hex"].strip()
 
-with tab2:
-    st.subheader("Followers Over Time")
-    if artists_win.empty:
-        st.warning("No data points in this time window.")
-    else:
-        import plotly.express as px
-        fig = px.line(
-            artists_win.sort_values("timestamp"),
-            x="timestamp",
-            y="followers",
-            color="artist_name",
-            labels={"timestamp": "Time (UTC)", "followers": "Spotify Followers", "artist_name": "Artist"},
-        )
-        st.plotly_chart(fig, use_container_width=True)
+def alt_color():
+    return alt.Scale(
+        domain=list(artist_colors.keys()) if artist_colors else alt.Undefined,
+        range=list(artist_colors.values()) if artist_colors else alt.Undefined,
+        scheme=None if artist_colors else "tableau10",
+    )
 
-with tab3:
-    st.subheader("Compare Artists (Δ in window)")
-    delta = delta_by_artist(artists_win)
-    if delta.empty:
-        st.info("No change data in this window yet.")
-    else:
-        import plotly.express as px
-        fig = px.bar(
-            delta.sort_values("followers_delta", ascending=False),
-            x="artist_name",
-            y="followers_delta",
-            color="followers_pct",
-            color_continuous_scale="RdYlGn",
-            labels={"artist_name": "Artist", "followers_delta": "Δ Followers", "followers_pct": "% change"},
-        )
-        st.plotly_chart(fig, use_container_width=True)
-        st.dataframe(delta, use_container_width=True)
+# ---------- Pretty charts (area + smoothed line + big points) ----------
+def pretty_series(df: pd.DataFrame, yfield: str, title: str, domain=None):
+    base = alt.Chart(df).encode(
+        x=alt.X("timestamp:T", title="Time (UTC)"),
+        color=alt.Color("artist_name:N", scale=alt_color(), legend=alt.Legend(title=None)),
+        tooltip=["artist_name", yfield, "timestamp"]
+    )
+    area = base.mark_area(opacity=0.15, interpolate="monotone").encode(
+        y=alt.Y(f"{yfield}:Q", title=title,
+                scale=(alt.Scale(domain=domain) if domain else alt.Undefined))
+    )
+    line = base.mark_line(interpolate="monotone", strokeWidth=2.5).encode(
+        y=alt.Y(f"{yfield}:Q", title=title,
+                scale=(alt.Scale(domain=domain) if domain else alt.Undefined))
+    )
+    pts = base.mark_circle(size=70).encode(y=f"{yfield}:Q")
+    return (area + line + pts).properties(height=320)
 
-with tab4:
-    st.subheader("Top Tracks (latest snapshot artists)")
-    if tracks_df.empty or latest.empty:
-        st.caption("No track data yet.")
-    else:
-        latest_names = latest["artist_name"].unique().tolist()
-        tracks_latest = tracks_df[tracks_df["artist_name"].isin(latest_names)].copy()
-        tracks_latest["timestamp"] = pd.to_datetime(tracks_latest["timestamp"], errors="coerce", utc=True)
-        # show the most recent pull’s tracks (not historical trend)
-        most_recent_pull = tracks_latest["timestamp"].max()
-        recent_tracks = tracks_latest[tracks_latest["timestamp"] == most_recent_pull]
-        show_cols = ["artist_name", "track_name", "track_popularity", "track_url", "timestamp"]
-        have = [c for c in show_cols if c in recent_tracks.columns]
-        if recent_tracks.empty:
-            st.caption("No recent track snapshot.")
-        else:
-            st.dataframe(
-                recent_tracks[have].sort_values(["artist_name", "track_popularity"], ascending=[True, False]),
-                use_container_width=True
-            )
+# followers
+y_field = "followers_delta" if show_delta else "followers"
+y_title = "Δ Followers" if show_delta else "Followers"
+followers_domain = None
+if auto_zoom and not show_delta:
+    v = view[y_field].dropna()
+    if not v.empty:
+        lo, hi = float(v.min()), float(v.max())
+        if lo == hi: lo, hi = lo*0.99, hi*1.01
+        pad = max((hi-lo)*0.05, 1.0); followers_domain = [lo-pad, hi+pad]
 
-# footer
-st.caption("Last fetch: "
-           f"{artists_df['timestamp'].max().strftime('%Y-%m-%d %H:%M:%S %Z') if not artists_df.empty else '—'} | "
-           f"artist rows={len(artists_df):,} | tracks rows={len(tracks_df):,}")
+st.subheader("Followers Over Time")
+st.altair_chart(pretty_series(view, y_field, y_title, followers_domain), use_container_width=True)
+
+# popularity
+p_field = "popularity_delta" if show_delta else "popularity"
+p_title = "Δ Popularity" if show_delta else "Popularity (0–100)"
+st.subheader("Popularity Over Time")
+st.altair_chart(pretty_series(view, p_field, p_title), use_container_width=True)
+
+st.caption("All timestamps are stored/displayed in UTC. Toggle Δ to see change; Auto-zoom tightens the y-axis to show small moves.")

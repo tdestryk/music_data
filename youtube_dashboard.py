@@ -1,285 +1,251 @@
 # youtube_dashboard.py
-# Streamlit dashboard for YouTube channel stats
-# - Robust UTC window filtering
-# - Graceful handling when CSVs are empty/missing
-# - Tabs: Snapshot • Time Series • Growth by Channel • Top Videos • Aggregates
-# - Latest upload cards + upload cadence heatmap
+# YouTube stats with links, thumbnails, Δ toggle, auto-zoom, 7d change, and polished charts.
 
 import os
-import json
 import pandas as pd
-import numpy as np
-import plotly.express as px
 import streamlit as st
-from pathlib import Path
+from dotenv import load_dotenv
+from googleapiclient.discovery import build
+import altair as alt
 
-st.set_page_config(page_title="YouTube Artist Stats", page_icon="📺", layout="wide")
+st.set_page_config(page_title="YouTube Artist Stats", page_icon="📹", layout="wide")
 
-DATA_DIR = Path(".")
-CHAN_CSV   = DATA_DIR / "youtube_channel_stats.csv"   # artist_name,channel_id,channel_title,subs,views,video_count,timestamp
-VIDEO_CSV  = DATA_DIR / "youtube_video_stats.csv"     # artist_name,channel_id,video_id,title,published_at,views,likes,comments,timestamp
-SOCIALS_JSON = DATA_DIR / "socials.json"              # optional
-
-# ---------- helpers
-
-def _safe_read_csv(path: Path) -> pd.DataFrame:
-    if not path.exists() or path.stat().st_size == 0:
-        return pd.DataFrame()
-    try:
-        df = pd.read_csv(path)
-    except Exception:
-        df = pd.read_csv(path, on_bad_lines="skip", engine="python")
-    return df
-
-def _parse_timestamp_utc(series: pd.Series) -> pd.Series:
-    return pd.to_datetime(series, utc=True, errors="coerce")
-
-def filter_window(df: pd.DataFrame, hours: int, ts_col: str) -> pd.DataFrame:
-    if df.empty or ts_col not in df.columns:
-        return df
-    ts = _parse_timestamp_utc(df[ts_col])
-    df = df.assign(_ts=ts).dropna(subset=["_ts"])
-    end = pd.Timestamp.now(tz="UTC")
-    start = end - pd.Timedelta(hours=hours)
-    return df[(df["_ts"] >= start) & (df["_ts"] <= end)].drop(columns=["_ts"])
-
-@st.cache_data(show_spinner=False)
-def load_youtube() -> tuple[pd.DataFrame, pd.DataFrame]:
-    chans = _safe_read_csv(CHAN_CSV)
-    vids  = _safe_read_csv(VIDEO_CSV)
-
-    if not chans.empty:
-        # normalize
-        if "timestamp" in chans.columns:
-            chans["timestamp"] = _parse_timestamp_utc(chans["timestamp"])
-        for c in ["subs","views","video_count"]:
-            if c in chans.columns:
-                chans[c] = pd.to_numeric(chans[c], errors="coerce")
-
-        # unify a "channel" display column
-        if "channel_title" in chans.columns:
-            chans["channel"] = chans["channel_title"]
-        elif "channel" not in chans.columns:
-            chans["channel"] = chans.get("artist_name", pd.Series(dtype=str))
-
-    if not vids.empty:
-        # two time-like columns: published_at (video publish), timestamp (snapshot)
-        if "timestamp" in vids.columns:
-            vids["timestamp"] = _parse_timestamp_utc(vids["timestamp"])
-        if "published_at" in vids.columns:
-            vids["published_at"] = _parse_timestamp_utc(vids["published_at"])
-
-        for c in ["views","likes","comments"]:
-            if c in vids.columns:
-                vids[c] = pd.to_numeric(vids[c], errors="coerce")
-
-    return chans, vids
-
-def load_socials() -> dict:
-    if SOCIALS_JSON.exists():
-        try:
-            return json.loads(SOCIALS_JSON.read_text(encoding="utf-8"))
-        except Exception:
-            return {}
-    return {}
-
-def latest_per_group(df: pd.DataFrame, group: list[str], time_col: str) -> pd.DataFrame:
-    if df.empty:
-        return df
-    return df.sort_values(time_col).groupby(group).tail(1)
-
-# ---------- UI header
-
-st.markdown("## 📺 YouTube Artist Stats Dashboard")
-
-hdr_left, hdr_right = st.columns([1,1])
-with hdr_left:
-    if st.button("🔁 Reload data", use_container_width=False):
-        st.cache_data.clear()
-        st.rerun()
-
-# ---------- load data
-
-channels_df, videos_df = load_youtube()
-socials = load_socials()
-
-all_channels = sorted(channels_df["channel"].dropna().unique().tolist() if "channel" in channels_df.columns else [])
-if not all_channels:
-    st.warning("No YouTube data yet. Trigger your **Fetch YouTube** workflow, then reload.")
+# ---------- Secrets ----------
+load_dotenv()
+YOUTUBE_API_KEY = os.getenv("YOUTUBE_API_KEY")
+if not YOUTUBE_API_KEY:
+    st.error("Missing YOUTUBE_API_KEY in .env or host secrets.")
     st.stop()
 
-selected = st.multiselect("Choose channels to display", options=all_channels, default=all_channels)
-win = st.slider("Time window (hours)", 6, 168, 72)
+CSV_PATH  = "youtube_stats.csv"
+LINKS_CSV = "artist_links.csv"   # needs: artist_name,youtube_channel_id and optional links/color_hex
 
-w_channels = filter_window(channels_df[channels_df["channel"].isin(selected)], win, "timestamp")
-w_videos   = filter_window(videos_df[videos_df["artist_name"].isin(channels_df[channels_df['channel'].isin(selected)]['artist_name'])] if not videos_df.empty and "artist_name" in videos_df.columns and "artist_name" in channels_df.columns else videos_df, win, "timestamp")
+# ---------- Helpers ----------
+def now_utc() -> pd.Timestamp: return pd.Timestamp.now(tz="UTC")
+def to_utc(x) -> pd.Series: return pd.to_datetime(x, utc=True, errors="coerce")
 
-# quick header metrics
-m1, m2, m3, m4 = st.columns(4)
-if w_channels.empty:
-    m1.metric("Total Subscribers", "0")
-    m2.metric("Total Views", "0")
-    m3.metric("Uploads in Window", "0")
-    m4.metric("Snapshots Captured", "0")
-else:
-    latest_ch = latest_per_group(w_channels, ["channel"], "timestamp")
-    m1.metric("Total Subscribers", f"{int(latest_ch['subs'].fillna(0).sum()):,}")
-    m2.metric("Total Views", f"{int(latest_ch['views'].fillna(0).sum()):,}")
-    m3.metric("Uploads in Window", f"{0 if w_videos.empty else w_videos['video_id'].nunique():,}")
-    m4.metric("Snapshots Captured", f"{w_channels.shape[0]:,}")
+def normalize_csv(p: str):
+    if not os.path.exists(p): return
+    df = pd.read_csv(p)
+    if "timestamp" in df.columns:
+        df["timestamp"] = to_utc(df["timestamp"]).dt.strftime("%Y-%m-%dT%H:%M:%SZ")
+        df.to_csv(p, index=False)
 
-# ---------- Tabs
-tabA, tabB, tabC, tabD, tabE = st.tabs(["✨ Snapshot", "⏱️ Time Series", "📈 Growth by Channel", "🎬 Top Videos", "📦 Aggregates"])
+def load_history(p: str) -> pd.DataFrame:
+    if not os.path.exists(p):
+        return pd.DataFrame(columns=["timestamp","artist_name","channel_id","subscribers","views","thumb_url"])
+    df = pd.read_csv(p)
+    if "timestamp" in df.columns: df["timestamp"] = to_utc(df["timestamp"])
+    return df
 
-with tabA:
-    st.subheader("Latest Channel Snapshot")
-    if w_channels.empty:
-        st.info("No channel rows in this time window.")
-    else:
-        latest = latest_per_group(w_channels, ["channel"], "timestamp")
-        show = [c for c in ["channel","subs","views","video_count","timestamp"] if c in latest.columns]
-        st.dataframe(latest[show].sort_values("subs", ascending=False), use_container_width=True)
+def save_history(p: str, df: pd.DataFrame):
+    out = df.copy()
+    out["timestamp"] = to_utc(out["timestamp"]).dt.strftime("%Y-%m-%dT%H:%M:%SZ")
+    out.to_csv(p, index=False)
 
-    st.markdown("---")
-    st.markdown("#### Most Recent Upload (all-time, by published date)")
-    if videos_df.empty:
-        st.caption("No video data yet.")
-    else:
-        all_latest = (
-            videos_df.dropna(subset=["published_at"])
-                     .sort_values("published_at")
-                     .groupby("artist_name", as_index=False)
-                     .tail(1)
-                     .sort_values("artist_name")
-        )
-        if all_latest.empty:
-            st.caption("No parsed published times yet.")
-        else:
-            n = min(len(all_latest), 4)
-            cols = st.columns(n if n>0 else 1)
-            for i, row in enumerate(all_latest.itertuples(index=False)):
-                with cols[i % n]:
-                    st.markdown(f"**{row.artist_name}**")
-                    thumb = f"https://img.youtube.com/vi/{row.video_id}/hqdefault.jpg"
-                    st.image(thumb, use_container_width=True)
-                    when = pd.to_datetime(row.published_at).tz_convert("UTC").strftime("%b %d, %Y %H:%M UTC")
-                    st.caption(when)
-                    url = f"https://www.youtube.com/watch?v={row.video_id}"
-                    st.markdown(f"[{row.title}]({url})")
+def upsert_snapshot(p: str, row: dict):
+    hist = load_history(p)
+    new  = pd.DataFrame([row])
+    c = pd.concat([hist, new], ignore_index=True)
+    c["timestamp"] = to_utc(c["timestamp"])
+    c["ts_min"] = c["timestamp"].dt.floor("T")
+    c = (c.sort_values("timestamp")
+          .drop_duplicates(subset=["channel_id","ts_min"], keep="last"))
+    c.drop(columns=["ts_min"], inplace=True)
+    save_history(p, c)
 
-    st.markdown("---")
-    st.markdown("#### Upload cadence (weekday × hour, from published_at)")
-    if videos_df.empty or videos_df["published_at"].dropna().empty:
-        st.caption("No publish times yet.")
-    else:
-        heat = videos_df.dropna(subset=["published_at"]).copy()
-        heat["weekday"] = heat["published_at"].dt.tz_convert("UTC").dt.weekday  # 0=Mon
-        heat["hour"]    = heat["published_at"].dt.tz_convert("UTC").dt.hour
-        pivot = heat.pivot_table(index="weekday", columns="hour", values="video_id", aggfunc="count", fill_value=0)
-        # reorder rows Mon..Sun
-        pivot = pivot.reindex(index=[0,1,2,3,4,5,6])
-        fig = px.imshow(
-            pivot,
-            labels=dict(x="Hour (UTC)", y="Weekday (0=Mon)", color="Uploads"),
-            aspect="auto",
-            color_continuous_scale="Blues"
-        )
-        fig.update_layout(height=360, margin=dict(l=10,r=10,t=10,b=10))
-        st.plotly_chart(fig, use_container_width=True)
+def filter_window(df: pd.DataFrame, hours: int) -> pd.DataFrame:
+    if df.empty: return df
+    ts = to_utc(df["timestamp"])
+    df = df.loc[ts.notna()].copy(); ts = ts.loc[ts.notna()]
+    end = now_utc(); start = end - pd.Timedelta(hours=hours)
+    return df.loc[(ts >= start) & (ts <= end)].copy()
 
-with tabB:
-    st.subheader("Time Series")
-    if w_channels.empty:
-        st.info("No channel rows in this time window.")
-    else:
-        ts = w_channels.copy()
-        ts["time"] = ts["timestamp"].dt.tz_convert("UTC")
+def load_links() -> pd.DataFrame:
+    if not os.path.exists(LINKS_CSV): return pd.DataFrame()
+    df = pd.read_csv(LINKS_CSV)
+    for need in ["artist_name","youtube_channel_id","youtube_url","spotify_url","facebook_url",
+                 "instagram_url","tiktok_url","twitter_url","website_url","color_hex"]:
+        if need not in df.columns: df[need] = ""
+    return df
 
-        left, right = st.columns(2)
+# ---------- API ----------
+@st.cache_resource(show_spinner=False)
+def get_youtube():
+    return build("youtube", "v3", developerKey=YOUTUBE_API_KEY, cache_discovery=False)
 
-        with left:
-            fig1 = px.line(
-                ts.sort_values("time"),
-                x="time", y="subs", color="channel",
-                labels={"time":"Time (UTC)","subs":"Subscribers","channel":"Channel"},
-            )
-            fig1.update_layout(height=380, margin=dict(l=10,r=10,t=10,b=10))
-            st.plotly_chart(fig1, use_container_width=True)
+yt = get_youtube()
 
-        with right:
-            fig2 = px.line(
-                ts.sort_values("time"),
-                x="time", y="views", color="channel",
-                labels={"time":"Time (UTC)","views":"Views","channel":"Channel"},
-            )
-            fig2.update_layout(height=380, margin=dict(l=10,r=10,t=10,b=10))
-            st.plotly_chart(fig2, use_container_width=True)
+def fetch_channel(cid: str) -> dict:
+    r = yt.channels().list(part="statistics,snippet", id=cid).execute()
+    items = r.get("items", [])
+    if not items: return {}
+    it = items[0]
+    stats = it["statistics"]
+    title = it["snippet"]["title"]
+    thumbs = it["snippet"].get("thumbnails", {})
+    # prefer high/medium/default
+    thumb = thumbs.get("high", {}).get("url") or thumbs.get("medium", {}).get("url") or thumbs.get("default", {}).get("url") or ""
+    return {
+        "timestamp": now_utc(),
+        "artist_name": title,         # YouTube title; we’ll map when displaying
+        "channel_id": cid,
+        "subscribers": int(stats.get("subscriberCount", 0)),
+        "views": int(stats.get("viewCount", 0)),
+        "thumb_url": thumb,
+    }
 
-    st.markdown("#### Uploads per day (in window)")
-    if w_videos.empty or "published_at" not in w_videos.columns:
-        st.caption("No uploads in this window.")
-    else:
-        per_day = (
-            w_videos.dropna(subset=["published_at"])
-                    .assign(day=w_videos["published_at"].dt.tz_convert("UTC").dt.date)
-                    .groupby("day", as_index=False)
-                    .agg(uploads=("video_id","nunique"))
-        )
-        fig = px.bar(per_day, x="day", y="uploads", labels={"day":"Day (UTC)","uploads":"Uploads"})
-        fig.update_layout(height=300, margin=dict(l=10,r=10,t=10,b=10))
-        st.plotly_chart(fig, use_container_width=True)
+# ---------- UI ----------
+st.title("📹 YouTube Dashboard")
 
-with tabC:
-    st.subheader("Growth by Channel (Subscribers Δ in window)")
-    if w_channels.empty:
-        st.info("No data in this window.")
-    else:
-        seq = w_channels.sort_values(["channel","timestamp"])
-        first = seq.groupby("channel", as_index=False).first(numeric_only=True)
-        last  = seq.groupby("channel", as_index=False).last(numeric_only=True)
+with st.sidebar:
+    st.markdown("### Data Tools")
+    if st.button("🛠 Fix timestamps (normalize)"):
+        normalize_csv(CSV_PATH); st.success("CSV normalized to UTC ISO.")
+    st.caption("All times in UTC")
 
-        comp = last[["channel","subs"]].merge(first[["channel","subs"]], on="channel", suffixes=("_last","_first"))
-        comp["delta"] = comp["subs_last"] - comp["subs_first"]
-        comp["pct"] = np.where(comp["subs_first"]>0, comp["delta"]/comp["subs_first"], np.nan)
+default_artists = ["Bad Bunny","Kendrick Lamar","Foo Fighters","Taylor Swift","Weezer"]
+artists = st.multiselect("Select channels (by artist)", default_artists, default=default_artists)
 
-        fig = px.bar(comp.sort_values("delta", ascending=False),
-                     x="channel", y="delta", color="pct",
-                     color_continuous_scale="RdBu",
-                     labels={"channel":"Channel","delta":"Δ Subscribers","pct":"% change"})
-        fig.update_layout(height=420, margin=dict(l=10,r=10,t=10,b=10))
-        st.plotly_chart(fig, use_container_width=True)
+c1, c2, c3 = st.columns(3)
+with c1: hours = st.slider("Time window (hours)", 1, 168, 72)
+with c2: show_delta = st.toggle("Show Δ change", value=False)
+with c3: auto_zoom = st.toggle("Auto-zoom y-axis", value=True)
 
-with tabD:
-    st.subheader("Top Videos in Window")
-    if w_videos.empty:
-        st.info("No video rows in this window.")
-    else:
-        # pick top N by views at last snapshot per video
-        last_vid = (
-            w_videos.sort_values("timestamp")
-                    .groupby("video_id", as_index=False)
-                    .tail(1)
-        )
-        topN = st.slider("Show top N by views", 5, 50, 25)
-        show_cols = ["channel_id","artist_name","title","views","likes","comments","published_at","video_id","timestamp"]
-        show_cols = [c for c in show_cols if c in last_vid.columns]
-        top = last_vid.sort_values("views", ascending=False).head(topN)[show_cols]
-        st.dataframe(top, use_container_width=True, height=500)
+links_df = load_links()
+chan_map = {}
+if not links_df.empty and "youtube_channel_id" in links_df.columns:
+    selected = links_df[links_df["artist_name"].isin(artists)]
+    chan_map = dict(zip(selected["artist_name"], selected["youtube_channel_id"]))
 
-with tabE:
-    st.subheader("Aggregates")
-    if w_channels.empty:
-        st.info("No data in this window.")
-    else:
-        agg = (
-            w_channels.groupby("channel", as_index=False)
-                      .agg(
-                          snapshots=("channel", "count"),
-                          latest_subs=("subs","last"),
-                          latest_views=("views","last"),
-                          min_subs=("subs","min"),
-                          max_subs=("subs","max"),
-                      )
-        )
-        agg["subs_range"] = agg["max_subs"] - agg["min_subs"]
-        st.dataframe(agg.sort_values("latest_subs", ascending=False), use_container_width=True)
+missing = [a for a in artists if a not in chan_map]
+if missing:
+    st.warning(f"Missing channel IDs for: {', '.join(missing)}. Add them to {LINKS_CSV}")
+
+if st.button("🔄 Reload data") and chan_map:
+    with st.spinner("Fetching latest YouTube stats…"):
+        for artist, cid in chan_map.items():
+            row = fetch_channel(cid)
+            if not row: 
+                st.warning(f"Couldn’t fetch stats for {artist} ({cid})")
+                continue
+            # store with the friendly artist name from CSV (not YouTube title)
+            row["artist_name"] = artist
+            upsert_snapshot(CSV_PATH, row)
+    st.success("Updated snapshots!"); st.rerun()
+
+# ---------- Data prep ----------
+normalize_csv(CSV_PATH)
+hist = load_history(CSV_PATH)
+view = hist[hist["artist_name"].isin(artists)].copy()
+view = filter_window(view, hours)
+if view.empty:
+    st.info("No rows in window. Reload data or widen the window.")
+    st.stop()
+
+# deltas
+view = view.sort_values(["artist_name","timestamp"])
+view["subs_delta"]  = view.groupby("artist_name")["subscribers"].diff()
+view["views_delta"] = view.groupby("artist_name")["views"].diff()
+
+# 7-day change
+cut = now_utc() - pd.Timedelta(days=7)
+seven = hist[hist["artist_name"].isin(artists)].copy()
+seven = seven[to_utc(seven["timestamp"]) >= cut]
+agg = (seven.sort_values("timestamp")
+             .groupby("artist_name")
+             .agg(last_subs=("subscribers","last"),
+                  first_subs=("subscribers","first"),
+                  last_views=("views","last"),
+                  first_views=("views","first"))
+             .reset_index())
+agg["subs_Δ7d"] = agg["last_subs"] - agg["first_subs"]
+agg["views_Δ7d"] = agg["last_views"] - agg["first_views"]
+
+st.subheader("Δ in Last 7 Days (YouTube)")
+st.dataframe(agg[["artist_name","last_subs","subs_Δ7d","last_views","views_Δ7d"]],
+             use_container_width=True)
+
+# merge links & latest
+latest = (view.sort_values("timestamp")
+              .groupby("artist_name", as_index=False)
+              .tail(1)
+              .sort_values("artist_name"))
+if not links_df.empty:
+    keep = ["artist_name","youtube_url","spotify_url","facebook_url","instagram_url",
+            "tiktok_url","twitter_url","website_url"]
+    for k in keep:
+        if k not in links_df.columns: links_df[k] = ""
+    latest = latest.merge(links_df[["artist_name"]+keep], on="artist_name", how="left")
+
+st.subheader("Latest Snapshot (with links)")
+st.data_editor(
+    latest[["thumb_url","artist_name","subscribers","subs_delta","views","views_delta","timestamp",
+            "youtube_url","facebook_url","instagram_url","tiktok_url","twitter_url","website_url","spotify_url"]],
+    hide_index=True,
+    use_container_width=True,
+    column_config={
+        "thumb_url":     st.column_config.ImageColumn("Thumb", help="Channel thumbnail"),
+        "youtube_url":   st.column_config.LinkColumn("YouTube"),
+        "facebook_url":  st.column_config.LinkColumn("Facebook"),
+        "instagram_url": st.column_config.LinkColumn("Instagram"),
+        "tiktok_url":    st.column_config.LinkColumn("TikTok"),
+        "twitter_url":   st.column_config.LinkColumn("X/Twitter"),
+        "website_url":   st.column_config.LinkColumn("Website"),
+        "spotify_url":   st.column_config.LinkColumn("Spotify"),
+    }
+)
+
+# ---------- Color map ----------
+artist_colors = {}
+if not links_df.empty and "color_hex" in links_df.columns:
+    for _, r in links_df.dropna(subset=["artist_name"]).iterrows():
+        if isinstance(r.get("color_hex"), str) and r["color_hex"].strip():
+            artist_colors[r["artist_name"]] = r["color_hex"].strip()
+
+def alt_color():
+    return alt.Scale(
+        domain=list(artist_colors.keys()) if artist_colors else alt.Undefined,
+        range=list(artist_colors.values()) if artist_colors else alt.Undefined,
+        scheme=None if artist_colors else "tableau10",
+    )
+
+# ---------- Pretty charts ----------
+def pretty_series(df: pd.DataFrame, yfield: str, title: str, domain=None):
+    base = alt.Chart(df).encode(
+        x=alt.X("timestamp:T", title="Time (UTC)"),
+        color=alt.Color("artist_name:N", scale=alt_color(), legend=alt.Legend(title=None)),
+        tooltip=["artist_name", yfield, "timestamp"]
+    )
+    area = base.mark_area(opacity=0.15, interpolate="monotone").encode(
+        y=alt.Y(f"{yfield}:Q", title=title,
+                scale=(alt.Scale(domain=domain) if domain else alt.Undefined))
+    )
+    line = base.mark_line(interpolate="monotone", strokeWidth=2.5).encode(
+        y=alt.Y(f"{yfield}:Q", title=title,
+                scale=(alt.Scale(domain=domain) if domain else alt.Undefined))
+    )
+    pts = base.mark_circle(size=70).encode(y=f"{yfield}:Q")
+    return (area + line + pts).properties(height=320)
+
+# subscribers
+y_field = "subs_delta" if show_delta else "subscribers"
+y_title = "Δ Subscribers" if show_delta else "Subscribers"
+subs_domain = None
+if auto_zoom and not show_delta:
+    v = view[y_field].dropna()
+    if not v.empty:
+        lo, hi = float(v.min()), float(v.max())
+        if lo == hi: lo, hi = lo*0.99, hi*1.01
+        pad = max((hi-lo)*0.05, 1.0); subs_domain = [lo-pad, hi+pad]
+
+st.subheader("Subscribers Over Time")
+st.altair_chart(pretty_series(view, y_field, y_title, subs_domain), use_container_width=True)
+
+# views
+v_field = "views_delta" if show_delta else "views"
+v_title = "Δ Views" if show_delta else "Views"
+st.subheader("Views Over Time")
+st.altair_chart(pretty_series(view, v_field, v_title), use_container_width=True)
+
+st.caption("All timestamps are UTC. Toggle Δ to see change; Auto-zoom highlights subtle movements.")

@@ -1,6 +1,0 @@
-2025-08-11 02:33:54 | ok=1 | rows=5 | artists=5 | dur=1.05s
-
-{"ts": "2025-08-11T03:41:28+00:00", "component": "youtube", "status": "ok", "rows_channels": 5, "rows_videos": 25, "duration_s": 2.575}
-{"ts": "2025-08-11T03:41:31+00:00", "component": "youtube", "status": "ok", "rows_channels": 5, "rows_videos": 25, "duration_s": 2.548}
-{"ts": "2025-08-14T04:26:32+00:00", "component": "youtube", "status": "ok", "rows_channels": 5, "rows_videos": 25, "duration_s": 2.177}
-{"ts": "2025-08-14T04:32:56+00:00", "component": "youtube", "status": "ok", "rows_channels": 5, "rows_videos": 25, "duration_s": 2.106}2025-08-14 04:59:16 | ok=0 | rows=0 | artists=5 | dur=0.18s | err=error: invalid_client, error_description: Invalid client

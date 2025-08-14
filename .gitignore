@@ -36,3 +36,14 @@ data/
 # Ignore real env files but not the example
 .env
 !.env.example
+# secrets
+.env
+!.env.example
+.streamlit/secrets.toml
+
+# logs & caches
+*.log
+.cache/
+
+# data (optional—remove if you want CSVs tracked)
+*.csv

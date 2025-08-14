@@ -1,7 +1,7 @@
-name: fetch-youtube
+name: fetch-spotify
 on:
   schedule:
-    - cron: "*/15 * * * *"  # every 15 minutes (UTC)
+    - cron: "*/15 * * * *"   # every 15 minutes (UTC)
   workflow_dispatch: {}
 
 permissions:
@@ -22,17 +22,18 @@ jobs:
           python -m pip install -U pip
           pip install -r requirements.txt
 
-      - name: Run YouTube fetch
+      - name: Run Spotify fetch
         env:
-          YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
+          SPOTIPY_CLIENT_ID: ${{ secrets.SPOTIPY_CLIENT_ID }}
+          SPOTIPY_CLIENT_SECRET: ${{ secrets.SPOTIPY_CLIENT_SECRET }}
         run: |
-          python youtube_stats_extended.py
-          echo "{\"ts\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\",\"component\":\"youtube\",\"status\":\"ok\"}" >> runs.log
+          python spotify_stats_extended.py
+          echo "{\"ts\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\",\"component\":\"spotify\",\"status\":\"ok\"}" >> runs.log
 
       - name: Commit & push if changed
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git add youtube_channel_stats.csv youtube_video_stats.csv runs.log
-          git commit -m "YouTube: update $(date -u +%F\ %T)" || echo "No changes to commit"
+          git add spotify_stats.csv spotify_top_tracks.csv runs.log
+          git commit -m "Spotify: update $(date -u +%F\ %T)" || echo "No changes to commit"
           git push

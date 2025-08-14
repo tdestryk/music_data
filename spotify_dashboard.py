@@ -1,263 +1,206 @@
 # spotify_dashboard.py
-from datetime import timedelta
-from pathlib import Path
+import os
+from datetime import datetime, timedelta, timezone
+from typing import Optional
 
 import pandas as pd
 import plotly.express as px
 import streamlit as st
 
-RUNS_LOG = Path("runs.log")
-CSV_PATH = Path("spotify_stats.csv")
-ALERT_THRESHOLD_PCT = 0.2  # alert if |Δ%| >= this within selected window
-
-# ---------------- Page / Style ----------------
-st.set_page_config(page_title="Spotify Artist Stats", layout="wide")
-
-st.markdown("""
-<style>
-h1, h2, h3 { color: #1DB954; }
-.stTabs [data-baseweb="tab"] { font-size: 16px; }
-</style>
-""", unsafe_allow_html=True)
-
-st.markdown(
-    "## <img src='https://upload.wikimedia.org/wikipedia/commons/1/19/Spotify_logo_without_text.svg' width='28'/> "
-    "Spotify Artist Stats Dashboard",
-    unsafe_allow_html=True,
+# -----------------------------
+# Theme / page config
+# -----------------------------
+st.set_page_config(
+    page_title="Spotify Artist Stats Dashboard",
+    layout="wide",
 )
 
-# ---------------- Header: Last fetch ----------------
-def read_last_run():
-    if not RUNS_LOG.exists():
-        return None
-    try:
-        last = RUNS_LOG.read_text(encoding="utf-8").strip().splitlines()[-1]
-        return last
-    except Exception:
-        return None
+SPOTIFY_CSV = "spotify_stats.csv"
+TOPTRACKS_CSV = "spotify_top_tracks.csv"
 
-last = read_last_run()
-if last:
-    st.caption(f"Last fetch: `{last}`")
-else:
-    st.caption("Last fetch: unknown")
+# If you want to force a branch for raw fallback:
+DEFAULT_BRANCH = os.getenv("GITHUB_DEFAULT_BRANCH", "main")
+# You can hardcode your repo if needed:
+DEFAULT_REPO = os.getenv("GITHUB_REPOSITORY", "")  # "tdestrk/music_data" if you want to hardcode
 
-# ---------------- Data Loader ----------------
-@st.cache_data
-def load_data() -> pd.DataFrame:
+
+# -----------------------------
+# Utils
+# -----------------------------
+def _raw_url(path: str) -> Optional[str]:
     """
-    Read CSV robustly, parse timestamps, make sure required columns exist,
-    cast numeric types, and forward/back-fill genres per artist.
+    Build a raw.githubusercontent URL if we know the repo/owner.
     """
-    if not CSV_PATH.exists():
-        return pd.DataFrame()
+    repo = DEFAULT_REPO or os.getenv("CODESPACE_NAME", "")
+    # If repo is empty, return None. In Codespaces GITHUB_REPOSITORY is usually set;
+    # If not, you can hardcode: return "https://raw.githubusercontent.com/<owner>/<repo>/<branch>/" + path
+    if not DEFAULT_REPO:
+        return None
+    owner_repo = DEFAULT_REPO  # e.g., "tdestryk/music_data"
+    return f"https://raw.githubusercontent.com/{owner_repo}/{DEFAULT_BRANCH}/{path}"
 
-    df = pd.read_csv(
-        CSV_PATH,
-        engine="python",
-        on_bad_lines="skip",
-        quotechar='"',
+
+@st.cache_data(show_spinner=False, ttl=60)
+def load_csv(path: str) -> pd.DataFrame:
+    """
+    Try local path; if missing, try raw GitHub URL; else return empty DF.
+    """
+    if os.path.exists(path):
+        return pd.read_csv(path)
+    url = _raw_url(path)
+    if url:
+        try:
+            return pd.read_csv(url)
+        except Exception:
+            return pd.DataFrame()
+    return pd.DataFrame()
+
+
+def parse_ts(series: pd.Series, col: str = "timestamp") -> pd.Series:
+    """
+    Parse timestamps to tz-aware UTC.
+    Works whether input strings are naive or tz-aware.
+    """
+    s = pd.to_datetime(series, utc=True, errors="coerce")
+    return s
+
+
+def filter_window(df: pd.DataFrame, hours: int, ts_col: str = "timestamp") -> pd.DataFrame:
+    if df.empty:
+        return df
+    df = df.copy()
+    df[ts_col] = parse_ts(df[ts_col])
+    end = datetime.now(timezone.utc)
+    start = end - timedelta(hours=hours)
+    mask = (df[ts_col] >= start) & (df[ts_col] <= end)
+    return df.loc[mask]
+
+
+def latest_per_artist(df: pd.DataFrame) -> pd.DataFrame:
+    if df.empty:
+        return df
+    idx = (
+        df.sort_values("timestamp")
+          .groupby("artist_name", as_index=False)
+          .tail(1)
+          .set_index("artist_name")
     )
+    return idx.reset_index()
 
-    # Ensure columns exist
-    for col in ["artist_name", "followers", "popularity", "genres", "spotify_url", "timestamp"]:
-        if col not in df.columns:
-            df[col] = None
 
-    # Parse and clean timestamp
-    df["timestamp"] = pd.to_datetime(df["timestamp"], errors="coerce")
-    df = df.dropna(subset=["timestamp", "artist_name"])
+# -----------------------------
+# Load data
+# -----------------------------
+artists_raw = load_csv(SPOTIFY_CSV)
+tracks_raw = load_csv(TOPTRACKS_CSV)
 
-    # Numeric casts
-    df["followers"] = pd.to_numeric(df["followers"], errors="coerce")
-    df["popularity"] = pd.to_numeric(df["popularity"], errors="coerce")
-    df = df.dropna(subset=["followers"])  # must have followers
+# Guard columns (older rows may have different headers)
+expected_artist_cols = {"artist_name", "followers", "popularity", "spotify_url", "genres", "timestamp"}
+if not artists_raw.empty:
+    missing = expected_artist_cols - set(artists_raw.columns)
+    # Fill any missing expected columns so downstream code doesn't crash
+    for m in missing:
+        artists_raw[m] = pd.NA
 
-    # Sort for fills/diffs
-    df = df.sort_values(["artist_name", "timestamp"])
+# -----------------------------
+# Header
+# -----------------------------
+with st.container():
+    st.markdown("## 🎧 Spotify Artist Stats Dashboard")
+    # stats line
+    artist_rows = len(artists_raw)
+    track_rows = len(tracks_raw)
+    last_ts = (
+        parse_ts(artists_raw["timestamp"]).max().strftime("%Y-%m-%d %H:%M:%S UTC")
+        if not artists_raw.empty else "—"
+    )
+    st.caption(f"Last fetch: **{last_ts}** | artist rows={artist_rows} | tracks rows={track_rows}")
 
-    # Make genres sticky per artist
-    df["genres"] = df.groupby("artist_name")["genres"].ffill().bfill()
+# Controls
+default_artists = ["Bad Bunny", "Foo Fighters", "Kendrick Lamar", "Taylor Swift", "Weezer"]
+all_artists = sorted(artists_raw["artist_name"].dropna().unique().tolist()) if not artists_raw.empty else default_artists
 
-    return df
+col_left, col_right = st.columns([3, 1])
+with col_left:
+    selected = st.multiselect(
+        "Choose artists to display",
+        options=all_artists,
+        default=[a for a in default_artists if a in all_artists] or all_artists[:5],
+    )
+with col_right:
+    hours = st.slider("Time window (hours)", min_value=6, max_value=336, value=24, step=6)
 
-# Reload button (clears cache)
-top_cols = st.columns([1, 8, 1])
-with top_cols[0]:
-   if st.button("🔄 Reload data"):
-    # clear the cached dataframe
-    load_data.clear()
-    try:
-        st.rerun()                 # Streamlit ≥ 1.30
-    except AttributeError:
-        st.experimental_rerun()    # older Streamlit fallback
+st.button("🔁 Reload data", on_click=lambda: st.cache_data.clear())
 
-df = load_data()
-if df.empty:
-    st.warning("No data available to display.")
+# Windowed frames
+artists = filter_window(artists_raw, hours)
+tracks = filter_window(tracks_raw, hours, ts_col="timestamp")
+
+if not selected:
+    st.info("No artists selected.")
     st.stop()
 
-# ---------------- Controls ----------------
-all_artists = sorted(df["artist_name"].unique().tolist())
-selected_artists = st.multiselect(
-    "Choose artists to display",
-    options=all_artists,
-    default=all_artists,
-)
+w = artists[artists["artist_name"].isin(selected)]
 
-hours = st.slider("Time window (hours)", min_value=1, max_value=168, value=24)
-cutoff = pd.Timestamp.now(tz=df["timestamp"].dt.tz) - timedelta(hours=hours)
+if w.empty:
+    st.warning("No artist snapshots found in this time window.")
+    st.stop()
 
-hide_backfill = "is_backfill" in df.columns and st.checkbox("Hide backfilled rows", value=True)
-if hide_backfill and "is_backfill" in df.columns:
-    df_view_base = df[df["is_backfill"] != 1]
-else:
-    df_view_base = df
+# -----------------------------
+# KPIs
+# -----------------------------
+k1, k2, k3 = st.columns(3)
+latest = latest_per_artist(w)
 
-view = df_view_base[
-    (df_view_base["artist_name"].isin(selected_artists)) &
-    (df_view_base["timestamp"] >= cutoff)
-].copy()
+with k1:
+    st.metric("Total Followers", f"{int(latest['followers'].fillna(0).sum()):,}")
+with k2:
+    st.metric("Avg Popularity", f"{latest['popularity'].fillna(0).mean():.1f}")
+with k3:
+    st.metric("Artists in View", f"{latest['artist_name'].nunique():,}")
 
-# ---------------- Enhance metrics ----------------
-if not view.empty:
-    # Friendly scales
-    view["followers_thousands"] = view["followers"] / 1_000
-    view["followers_millions"] = view["followers"] / 1_000_000
+# -----------------------------
+# Tabs
+# -----------------------------
+tab1, tab2, tab3 = st.tabs(["📋 Current Snapshot", "📈 Followers Over Time", "🎵 Top Tracks"])
 
-    # Proper ordering for diffs
-    view = view.sort_values(["artist_name", "timestamp"])
-
-    # Deltas and percent change vs previous point
-    view["followers_delta"] = view.groupby("artist_name")["followers"].diff()
-    view["followers_pct"] = view.groupby("artist_name")["followers"].pct_change() * 100
-
-    # Optional smoothing
-    smooth = st.checkbox("Smooth to hourly averages", value=False, key="smooth_hourly")
-    if smooth:
-        view = (
-            view.set_index("timestamp")
-                .groupby("artist_name")
-                .apply(lambda g: g.resample("1H").mean(numeric_only=True).ffill())
-                .reset_index(level=0)
-                .reset_index()
-        )
-
-# ---------------- In-app Alerts (Δ% over window) ----------------
-if not view.empty:
-    latest = view.sort_values("timestamp").groupby("artist_name").last().reset_index()
-    earliest = view.sort_values("timestamp").groupby("artist_name").first().reset_index()
-    win = latest[["artist_name", "followers"]].merge(
-        earliest[["artist_name", "followers"]].rename(columns={"followers": "start"}),
-        on="artist_name",
-        how="left",
-    )
-    win["followers"] = pd.to_numeric(win["followers"], errors="coerce")
-    win["start"] = pd.to_numeric(win["start"], errors="coerce")
-    win = win.dropna(subset=["followers", "start"])
-    win["pct"] = (win["followers"] - win["start"]) / win["start"] * 100
-    tripped = win[win["pct"].abs() >= ALERT_THRESHOLD_PCT]
-
-    if not tripped.empty:
-        lines = [f"• **{r.artist_name}**: {r.pct:+.3f}% in window" for r in tripped.itertuples()]
-        st.warning("🚨 Alert threshold reached:\n\n" + "\n".join(lines))
-
-# ---------------- Tabs ----------------
-tab1, tab2, tab3 = st.tabs(["📊 Current Stats Summary", "📈 Followers Over Time", "🧪 Compare Artists"])
-
-# ---- Tab 1: Current Stats ----
+# --- Snapshot
 with tab1:
-    st.subheader("📊 Current Stats Summary")
-    if view.empty:
-        st.info("No rows in the selected time range.")
-    else:
-        latest = view.sort_values("timestamp").groupby("artist_name").last().reset_index()
-        # Ensure display columns exist
-        for col in ["followers", "popularity", "genres", "spotify_url"]:
-            if col not in latest.columns:
-                latest[col] = None
-        st.dataframe(
-            latest[["artist_name", "followers", "popularity", "genres", "spotify_url"]],
-            use_container_width=True,
-        )
+    st.subheader("Current Stats Summary")
+    st.dataframe(
+        latest[["artist_name", "followers", "popularity", "genres", "spotify_url"]].set_index("artist_name"),
+        use_container_width=True
+    )
 
-# ---- Tab 2: Followers Over Time ----
+# --- Followers Over Time
 with tab2:
-    st.subheader("📈 Followers Over Time")
-    if view.empty:
-        st.info("No rows in the selected time range.")
-    else:
-        metric = st.radio(
-            "Metric",
-            ["Followers (millions)", "Followers (thousands)", "Δ Followers", "% Change", "Raw Followers"],
-            horizontal=True,
-        )
-        y_col = {
-            "Followers (millions)": "followers_millions",
-            "Followers (thousands)": "followers_thousands",
-            "Δ Followers": "followers_delta",
-            "% Change": "followers_pct",
-            "Raw Followers": "followers",
-        }[metric]
+    st.subheader("Followers Over Time")
+    w2 = w.sort_values("timestamp")
+    fig = px.line(
+        w2,
+        x="timestamp",
+        y="followers",
+        color="artist_name",
+        markers=True,
+        labels={"timestamp": "Date", "followers": "Followers"},
+    )
+    fig.update_layout(legend_title_text="Artist")
+    st.plotly_chart(fig, use_container_width=True)
 
-        fig = px.line(
-            view,
-            x="timestamp",
-            y=y_col,
-            color="artist_name",
-            markers=True,
-            labels={"timestamp": "Date", y_col: metric},
-        )
-
-        # Formatting
-        if metric in ["Followers (millions)", "Followers (thousands)", "Raw Followers"]:
-            fig.update_yaxes(tickformat="~s")
-        if metric == "% Change":
-            fig.update_yaxes(ticksuffix="%")
-
-        # Optional log scale for raw followers
-        if metric == "Raw Followers":
-            if st.toggle("Use log scale", value=False, key="log_followers"):
-                fig.update_yaxes(type="log")
-
-        st.plotly_chart(fig, use_container_width=True)
-
-# ---- Tab 3: Compare Artists ----
+# --- Top Tracks (window)
 with tab3:
-    st.subheader("🧪 Compare Artists")
-    if view.empty:
-        st.info("No rows in the selected time range.")
+    st.subheader("Top Tracks (in window)")
+    if tracks.empty:
+        st.caption("No track snapshots in this window.")
     else:
-        latest = view.sort_values("timestamp").groupby("artist_name").last().reset_index()
-        earliest = view.sort_values("timestamp").groupby("artist_name").first().reset_index()
-
-        change = latest[["artist_name", "followers", "popularity"]].merge(
-            earliest[["artist_name", "followers"]].rename(columns={"followers": "followers_start"}),
-            on="artist_name",
-            how="left",
-        )
-        change["followers_delta"] = change["followers"] - change["followers_start"]
-        change["followers_delta_pct"] = (change["followers_delta"] / change["followers_start"]) * 100
-
-        c1, c2 = st.columns(2)
-        with c1:
-            fig1 = px.bar(
-                change.sort_values("popularity", ascending=False),
-                x="artist_name", y="popularity", color="artist_name",
-                title="Current Popularity"
+        tsel = tracks[tracks["artist_name"].isin(selected)].copy()
+        if "track_popularity" in tsel.columns:
+            tsel = tsel.sort_values(["artist_name", "track_popularity"], ascending=[True, False])
+            st.dataframe(
+                tsel[["artist_name", "track_name", "track_popularity", "track_url", "timestamp"]],
+                use_container_width=True,
+                height=500
             )
-            st.plotly_chart(fig1, use_container_width=True)
-        with c2:
-            fig2 = px.bar(
-                change.sort_values("followers", ascending=False),
-                x="artist_name", y="followers", color="artist_name",
-                title="Current Followers"
-            )
-            fig2.update_yaxes(tickformat="~s")
-            st.plotly_chart(fig2, use_container_width=True)
-
-        st.caption("Change within the selected time window")
-        st.dataframe(
-            change[["artist_name", "followers", "followers_delta", "followers_delta_pct", "popularity"]],
-            use_container_width=True,
-        )
+        else:
+            st.caption("Your top-tracks CSV doesn't have 'track_popularity'; showing raw rows.")
+            st.dataframe(tsel, use_container_width=True)

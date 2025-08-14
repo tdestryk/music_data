@@ -1,1 +1,4 @@
 2025-08-11 02:33:54 | ok=1 | rows=5 | artists=5 | dur=1.05s
+
+{"ts": "2025-08-11T03:41:28+00:00", "component": "youtube", "status": "ok", "rows_channels": 5, "rows_videos": 25, "duration_s": 2.575}
+{"ts": "2025-08-11T03:41:31+00:00", "component": "youtube", "status": "ok", "rows_channels": 5, "rows_videos": 25, "duration_s": 2.548}

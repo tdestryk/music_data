@@ -1,0 +1,42 @@
+{
+  "Bad Bunny": {
+    "site": "",
+    "youtube": "https://www.youtube.com/@BadBunnyPR",
+    "spotify": "https://open.spotify.com/artist/4q3ewBCX7sLwd24euuV69X",
+    "instagram": "https://www.instagram.com/badbunnypr/",
+    "x": "https://x.com/BadBunnyPR",
+    "tiktok": ""
+  },
+  "Foo Fighters": {
+    "site": "https://foofighters.com",
+    "youtube": "https://www.youtube.com/@foofighters",
+    "spotify": "https://open.spotify.com/artist/7jy3rLJdDQY21OgRLCZ9sD",
+    "instagram": "https://www.instagram.com/foofighters/",
+    "x": "https://x.com/foofighters",
+    "tiktok": ""
+  },
+  "Kendrick Lamar": {
+    "site": "https://pglang.com",
+    "youtube": "https://www.youtube.com/@KendrickLamarVEVO",
+    "spotify": "https://open.spotify.com/artist/2YZyLoL8N0Wb9xBt1NhZWg",
+    "instagram": "https://www.instagram.com/kendricklamar/",
+    "x": "https://x.com/kendricklamar",
+    "tiktok": ""
+  },
+  "Taylor Swift": {
+    "site": "https://www.taylorswift.com",
+    "youtube": "https://www.youtube.com/@TaylorSwift",
+    "spotify": "https://open.spotify.com/artist/06HL4z0CvFAxyc27GXpf02",
+    "instagram": "https://www.instagram.com/taylorswift/",
+    "x": "https://x.com/taylorswift13",
+    "tiktok": ""
+  },
+  "Weezer": {
+    "site": "https://www.weezer.com",
+    "youtube": "https://www.youtube.com/@weezer",
+    "spotify": "https://open.spotify.com/artist/3jOstUTkEu2JkjvRdBA5Gu",
+    "instagram": "https://www.instagram.com/weezer/",
+    "x": "https://x.com/Weezer",
+    "tiktok": ""
+  }
+}

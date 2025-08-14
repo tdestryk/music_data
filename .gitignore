@@ -1,0 +1,35 @@
+# secrets
+.env
+.env.*
+.streamlit/secrets.toml
+
+# python junk
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+
+# logs & caches
+*.log
+runs.log
+.cache/
+.ipynb_checkpoints/
+
+# virtual envs
+.venv/
+venv/
+
+# build / dist
+dist/
+build/
+
+# editors
+.vscode/
+.idea/
+
+# data artifacts (adjust to your project)
+*.csv
+data/

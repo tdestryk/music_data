@@ -33,3 +33,6 @@ build/
 # data artifacts (adjust to your project)
 *.csv
 data/
+# Ignore real env files but not the example
+.env
+!.env.example

@@ -9,8 +9,10 @@ import pandas as pd
 import requests
 from dotenv import load_dotenv
 
-# --- env / constants ---
-load_dotenv()
+# -------------------------------------------------
+# Env
+# -------------------------------------------------
+load_dotenv(".env")  # explicit path so it always loads
 SPOTIFY_CLIENT_ID = os.getenv("SPOTIFY_CLIENT_ID")
 SPOTIFY_CLIENT_SECRET = os.getenv("SPOTIFY_CLIENT_SECRET")
 
@@ -21,12 +23,12 @@ SPOTIFY_API = "https://api.spotify.com/v1"
 if not SPOTIFY_CLIENT_ID or not SPOTIFY_CLIENT_SECRET:
     raise EnvironmentError("Set SPOTIFY_CLIENT_ID and SPOTIFY_CLIENT_SECRET in your .env")
 
-# --- helpers ---
-def utc_now() -> pd.Timestamp:
-    now = pd.Timestamp.utcnow()
-    if now.tzinfo is None:
-        return now.tz_localize("UTC")
-    return now.tz_convert("UTC")
+# -------------------------------------------------
+# Helpers
+# -------------------------------------------------
+def utc_now_floor_s() -> pd.Timestamp:
+    """Current UTC time floored to whole seconds (no microseconds)."""
+    return pd.Timestamp.now(tz="UTC").floor("S")
 
 def batched(it: Iterable[Any], n: int) -> Iterable[List[Any]]:
     buf: List[Any] = []
@@ -48,13 +50,16 @@ def get_token() -> str:
     r.raise_for_status()
     return r.json()["access_token"]
 
-def extract_spotify_id(val: str) -> str | None:
+_SPOTIFY_ID_RE = re.compile(r"[0-9A-Za-z]{22}$")
+_SPOTIFY_URL_RE = re.compile(r"spotify\.com/artist/([0-9A-Za-z]{22})")
+
+def extract_spotify_id(val: str | float | None) -> str | None:
     if not isinstance(val, str):
         return None
     s = val.strip()
-    if re.fullmatch(r"[0-9A-Za-z]{22}", s):
+    if _SPOTIFY_ID_RE.fullmatch(s):
         return s
-    m = re.search(r"spotify\.com/artist/([0-9A-Za-z]{22})", s)
+    m = _SPOTIFY_URL_RE.search(s)
     return m.group(1) if m else None
 
 def read_artist_links(path: str = LINKS_CSV) -> pd.DataFrame:
@@ -69,7 +74,7 @@ def read_artist_links(path: str = LINKS_CSV) -> pd.DataFrame:
     if not (sp_id_col or sp_url_col):
         raise ValueError("artist_links.csv needs 'spotify_id' or 'spotify_url'")
 
-    # Build spotify_id column
+    # Build spotify_id column from either id or url
     if sp_id_col:
         df["spotify_id"] = df[sp_id_col].apply(extract_spotify_id)
     else:
@@ -87,7 +92,7 @@ def get_artists(token: str, ids: List[str]) -> Dict[str, Dict]:
     for group in batched(ids, 50):
         r = requests.get(f"{SPOTIFY_API}/artists", params={"ids": ",".join(group)}, headers=headers, timeout=20)
         r.raise_for_status()
-        for a in r.json().get("artists", []):
+        for a in r.json().get("artists", []) or []:
             if a and a.get("id"):
                 out[a["id"]] = a
         time.sleep(0.1)
@@ -95,18 +100,30 @@ def get_artists(token: str, ids: List[str]) -> Dict[str, Dict]:
 
 def avg_top_track_popularity(token: str, artist_id: str, market: str = "US") -> float:
     headers = {"Authorization": f"Bearer {token}"}
-    r = requests.get(f"{SPOTIFY_API}/artists/{artist_id}/top-tracks", params={"market": market}, headers=headers, timeout=20)
+    r = requests.get(
+        f"{SPOTIFY_API}/artists/{artist_id}/top-tracks",
+        params={"market": market},
+        headers=headers,
+        timeout=20,
+    )
     if r.status_code == 429:
         time.sleep(int(r.headers.get("Retry-After", "1")))
-        r = requests.get(f"{SPOTIFY_API}/artists/{artist_id}/top-tracks", params={"market": market}, headers=headers, timeout=20)
+        r = requests.get(
+            f"{SPOTIFY_API}/artists/{artist_id}/top-tracks",
+            params={"market": market},
+            headers=headers,
+            timeout=20,
+        )
     r.raise_for_status()
     tracks = r.json().get("tracks", []) or []
     if not tracks:
         return 0.0
     pops = [int(t.get("popularity", 0) or 0) for t in tracks]
-    return round(sum(pops) / len(pops), 1)
+    return round(sum(pops) / max(1, len(pops)), 1)
 
-# --- main ---
+# -------------------------------------------------
+# Main
+# -------------------------------------------------
 def main() -> None:
     links = read_artist_links()
     if links.empty:
@@ -116,14 +133,17 @@ def main() -> None:
     token = get_token()
     info = get_artists(token, links["spotify_id"].tolist())
 
-    ts = utc_now()
+    ts = utc_now_floor_s()  # stable ISO seconds
+    iso_ts = ts.isoformat()  # e.g. 2025-08-14T21:50:00+00:00
+
     rows: List[Dict[str, Any]] = []
     for _, r in links.iterrows():
         aid = r["spotify_id"]
         a = info.get(aid)
+
         if not a:
             rows.append({
-                "timestamp": ts.isoformat(),
+                "timestamp": iso_ts,
                 "artist_name": r["artist_name"],
                 "spotify_id": aid,
                 "followers": None,
@@ -139,7 +159,7 @@ def main() -> None:
             avg_pop = 0.0
 
         rows.append({
-            "timestamp": ts.isoformat(),
+            "timestamp": iso_ts,
             "artist_name": a.get("name") or r["artist_name"],
             "spotify_id": aid,
             "followers": a.get("followers", {}).get("total"),
@@ -153,12 +173,17 @@ def main() -> None:
         return
 
     new = pd.DataFrame(rows)
-    new["timestamp"] = pd.to_datetime(new["timestamp"], utc=True)
+    # normalize timestamps we just created (already ISO UTC)
+    new["timestamp"] = pd.to_datetime(new["timestamp"], format="ISO8601", utc=True)
     new["ts_min"] = new["timestamp"].dt.floor("min")
 
+    # Merge with existing file (tolerant parse)
     if os.path.exists(OUT_CSV):
-        old = pd.read_csv(OUT_CSV, parse_dates=["timestamp"])
-        old["ts_min"] = pd.to_datetime(old["timestamp"], utc=True).dt.floor("min")
+        old = pd.read_csv(OUT_CSV)
+        # Coerce any legacy/mixed formats to proper UTC
+        old["timestamp"] = pd.to_datetime(old["timestamp"], format="ISO8601", utc=True, errors="coerce")
+        old = old[old["timestamp"].notna()]
+        old["ts_min"] = old["timestamp"].dt.floor("min")
         out = pd.concat([old, new], ignore_index=True)
     else:
         out = new
@@ -168,6 +193,9 @@ def main() -> None:
            .drop_duplicates(["artist_name", "ts_min"], keep="last")
            .drop(columns=["ts_min"])
     )
+
+    # Always write as ISO 8601 UTC
+    out["timestamp"] = out["timestamp"].dt.tz_convert("UTC")
     out.to_csv(OUT_CSV, index=False)
     print(f"Wrote {len(new)} new rows; {len(out)} total -> {OUT_CSV}")
 

@@ -4,3 +4,12 @@ Taylor Swift,06HL4z0CvFAxyc27GXpf02,UCqECaJ8Gagnn7YCbPEzWH6g,https://open.spotif
 Kendrick Lamar,2YZyLoL8N0Wb9xBt1NhZWg,UC3lBXcrKFnFAFkfVk5WuKcQ,https://open.spotify.com/artist/2YZyLoL8N0Wb9xBt1NhZWg,https://www.youtube.com/@kendricklamar,https://i.scdn.co/image/ab6761610000e5eb39ba6dcd4355c03de0b50918,https://www.facebook.com/kendricklamar,https://www.instagram.com/kendricklamar,https://twitter.com/kendricklamar,https://pgLang.com,,
 Foo Fighters,7jy3rLJdDQY21OgRLCZ9sD,UCi2KNss4Yx73NG0JARSFe0A,https://open.spotify.com/artist/7jy3rLJdDQY21OgRLCZ9sD,https://www.youtube.com/@foofighters,https://i.scdn.co/image/ab6761610000e5eb07be1890ac379235723258de,https://www.facebook.com/foofighters,https://www.instagram.com/foofighters,https://twitter.com/foofighters,https://foofighters.com,,
 Weezer,3jOstUTkEu2JkjvRdBA5Gu,UC7JDBUzkcwRGtQGia3_mMgQ,https://open.spotify.com/artist/3jOstUTkEu2JkjvRdBA5Gu,https://www.youtube.com/@weezer,https://i.scdn.co/image/ab6761610000e5eb3cd35451daa1b690cfbbb2d4,https://www.facebook.com/Weezer,https://www.instagram.com/weezer,https://twitter.com/Weezer,https://weezer.com,,
+artist_name,
+spotify_url,
+youtube_url,
+facebook_url,
+instagram_url,
+tiktok_url,
+twitter_url,      # or x_url — we’ll normalize both
+website_url,
+image_url         # used for the “baseball card” photo

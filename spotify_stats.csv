@@ -1,55 +1,73 @@
-artist_name,followers,popularity,genres,spotify_url,timestamp,artist_id,avg_top_track_pop,image_url,spotify_id
-Taylor Swift,140951936,99,,https://open.spotify.com/artist/06HL4z0CvFAxyc27GXpf02,2025-08-07T17:41:51Z,,,,
-Taylor Swift,140951936,99,,https://open.spotify.com/artist/06HL4z0CvFAxyc27GXpf02,2025-08-07T17:42:37Z,,,,
-Foo Fighters,12765963,79,"rock, post-grunge, alternative rock, grunge",https://open.spotify.com/artist/7jy3rLJdDQY21OgRLCZ9sD,2025-08-09T00:11:29Z,,,,
-Taylor Swift,141096400,99,,https://open.spotify.com/artist/06HL4z0CvFAxyc27GXpf02,2025-08-11T02:09:49Z,,,,
-Taylor Swift,141096400,99,,https://open.spotify.com/artist/06HL4z0CvFAxyc27GXpf02,2025-08-11T02:33:53Z,,,,
-Bad Bunny,99064487,100,"reggaeton, trap latino, urbano latino, latin",,2025-08-14T05:47:20Z,4q3ewBCX7sLwd24euuV69X,88.8,,
-Kendrick Lamar,43179421,94,"hip hop, west coast hip hop",,2025-08-14T05:47:21Z,2YZyLoL8N0Wb9xBt1NhZWg,85.4,,
-Foo Fighters,12777636,79,"rock, post-grunge, alternative rock, grunge",,2025-08-14T05:47:21Z,7jy3rLJdDQY21OgRLCZ9sD,74.0,,
-Taylor Swift,141320162,99,,,2025-08-14T05:47:21Z,06HL4z0CvFAxyc27GXpf02,81.9,,
-Weezer,4461127,77,alternative rock,,2025-08-14T05:47:22Z,3jOstUTkEu2JkjvRdBA5Gu,70.8,,
-Foo Fighters,12777636,79,"rock, post-grunge, alternative rock, grunge",,2025-08-14T05:53:07Z,7jy3rLJdDQY21OgRLCZ9sD,74.0,,
-Bad Bunny,99064487,100,"reggaeton, trap latino, urbano latino, latin",,2025-08-14T05:53:07Z,4q3ewBCX7sLwd24euuV69X,88.8,,
-Kendrick Lamar,43179421,94,"hip hop, west coast hip hop",,2025-08-14T05:53:07Z,2YZyLoL8N0Wb9xBt1NhZWg,85.4,,
-Weezer,4461127,77,alternative rock,,2025-08-14T05:53:08Z,3jOstUTkEu2JkjvRdBA5Gu,70.8,,
-Taylor Swift,141320162,99,,,2025-08-14T05:53:08Z,06HL4z0CvFAxyc27GXpf02,81.9,,
-Bad Bunny,99064487,100,"reggaeton, trap latino, urbano latino, latin",,2025-08-14T06:05:01Z,4q3ewBCX7sLwd24euuV69X,88.8,,
-Taylor Swift,141320162,99,,,2025-08-14T06:05:02Z,06HL4z0CvFAxyc27GXpf02,81.9,,
-Foo Fighters,12777636,79,"rock, post-grunge, alternative rock, grunge",,2025-08-14T06:05:02Z,7jy3rLJdDQY21OgRLCZ9sD,74.0,,
-Kendrick Lamar,43179421,94,"hip hop, west coast hip hop",,2025-08-14T06:05:02Z,2YZyLoL8N0Wb9xBt1NhZWg,85.4,,
-Weezer,4461127,77,alternative rock,,2025-08-14T06:05:03Z,3jOstUTkEu2JkjvRdBA5Gu,70.8,,
-Bad Bunny,99064487,100,"reggaeton, trap latino, urbano latino, latin",,2025-08-14T06:07:19Z,4q3ewBCX7sLwd24euuV69X,88.8,,
-Foo Fighters,12777636,79,"rock, post-grunge, alternative rock, grunge",,2025-08-14T06:07:20Z,7jy3rLJdDQY21OgRLCZ9sD,74.0,,
-Kendrick Lamar,43179421,94,"hip hop, west coast hip hop",,2025-08-14T06:07:20Z,2YZyLoL8N0Wb9xBt1NhZWg,85.4,,
-Taylor Swift,141320162,99,,,2025-08-14T06:07:20Z,06HL4z0CvFAxyc27GXpf02,81.9,,
-Weezer,4461127,77,alternative rock,,2025-08-14T06:07:21Z,3jOstUTkEu2JkjvRdBA5Gu,70.8,,
-Kendrick Lamar,43179421,94,"hip hop, west coast hip hop",,2025-08-14T06:11:45Z,2YZyLoL8N0Wb9xBt1NhZWg,85.4,,
-Foo Fighters,12777636,79,"rock, post-grunge, alternative rock, grunge",,2025-08-14T06:11:45Z,7jy3rLJdDQY21OgRLCZ9sD,74.0,,
-Bad Bunny,99064487,100,"reggaeton, trap latino, urbano latino, latin",,2025-08-14T06:11:45Z,4q3ewBCX7sLwd24euuV69X,88.8,,
-Taylor Swift,141320162,99,,,2025-08-14T06:11:46Z,06HL4z0CvFAxyc27GXpf02,81.9,,
-Weezer,4461127,77,alternative rock,,2025-08-14T06:11:46Z,3jOstUTkEu2JkjvRdBA5Gu,70.8,,
-Bad Bunny,99064487,100,"reggaeton, trap latino, urbano latino, latin",,2025-08-14T18:20:17Z,4q3ewBCX7sLwd24euuV69X,88.8,https://i.scdn.co/image/ab6761610000e5eb81f47f44084e0a09b5f0fa13,
-Kendrick Lamar,43179421,94,"hip hop, west coast hip hop",,2025-08-14T18:20:17Z,2YZyLoL8N0Wb9xBt1NhZWg,85.3,https://i.scdn.co/image/ab6761610000e5eb39ba6dcd4355c03de0b50918,
-Taylor Swift,141320162,99,,,2025-08-14T18:20:18Z,06HL4z0CvFAxyc27GXpf02,82.1,https://i.scdn.co/image/ab6761610000e5ebe672b5f553298dcdccb0e676,
-Foo Fighters,12777636,79,"rock, post-grunge, alternative rock, grunge",,2025-08-14T18:20:18Z,7jy3rLJdDQY21OgRLCZ9sD,73.9,https://i.scdn.co/image/ab6761610000e5eb07be1890ac379235723258de,
-Weezer,4461127,77,alternative rock,,2025-08-14T18:20:18Z,3jOstUTkEu2JkjvRdBA5Gu,70.8,https://i.scdn.co/image/ab6761610000e5eb3cd35451daa1b690cfbbb2d4,
-Bad Bunny,99064487,100,"reggaeton, trap latino, urbano latino, latin",,2025-08-14T18:22:28Z,4q3ewBCX7sLwd24euuV69X,88.8,https://i.scdn.co/image/ab6761610000e5eb81f47f44084e0a09b5f0fa13,
-Kendrick Lamar,43179421,94,"hip hop, west coast hip hop",,2025-08-14T18:22:28Z,2YZyLoL8N0Wb9xBt1NhZWg,85.3,https://i.scdn.co/image/ab6761610000e5eb39ba6dcd4355c03de0b50918,
-Taylor Swift,141320162,99,,,2025-08-14T18:22:29Z,06HL4z0CvFAxyc27GXpf02,82.1,https://i.scdn.co/image/ab6761610000e5ebe672b5f553298dcdccb0e676,
-Foo Fighters,12777636,79,"rock, post-grunge, alternative rock, grunge",,2025-08-14T18:22:29Z,7jy3rLJdDQY21OgRLCZ9sD,73.9,https://i.scdn.co/image/ab6761610000e5eb07be1890ac379235723258de,
-Weezer,4461127,77,alternative rock,,2025-08-14T18:22:30Z,3jOstUTkEu2JkjvRdBA5Gu,70.8,https://i.scdn.co/image/ab6761610000e5eb3cd35451daa1b690cfbbb2d4,
-Bad Bunny,99064487,100,"reggaeton, trap latino, urbano latino, latin",,2025-08-14T18:48:14Z,4q3ewBCX7sLwd24euuV69X,88.8,https://i.scdn.co/image/ab6761610000e5eb81f47f44084e0a09b5f0fa13,
-Foo Fighters,12777636,79,"rock, post-grunge, alternative rock, grunge",,2025-08-14T18:48:15Z,7jy3rLJdDQY21OgRLCZ9sD,73.9,https://i.scdn.co/image/ab6761610000e5eb07be1890ac379235723258de,
-Kendrick Lamar,43179421,94,"hip hop, west coast hip hop",,2025-08-14T18:48:15Z,2YZyLoL8N0Wb9xBt1NhZWg,85.3,https://i.scdn.co/image/ab6761610000e5eb39ba6dcd4355c03de0b50918,
-Taylor Swift,141320162,99,,,2025-08-14T18:48:15Z,06HL4z0CvFAxyc27GXpf02,82.1,https://i.scdn.co/image/ab6761610000e5ebe672b5f553298dcdccb0e676,
-Weezer,4461127,77,alternative rock,,2025-08-14T18:48:16Z,3jOstUTkEu2JkjvRdBA5Gu,70.8,https://i.scdn.co/image/ab6761610000e5eb3cd35451daa1b690cfbbb2d4,
-Foo Fighters,12777636,79,"rock, post-grunge, alternative rock, grunge",,2025-08-14T19:30:43Z,,73.9,https://i.scdn.co/image/ab6761610000e5eb07be1890ac379235723258de,7jy3rLJdDQY21OgRLCZ9sD
-Bad Bunny,99064487,100,"reggaeton, trap latino, urbano latino, latin",,2025-08-14T19:33:07Z,,88.8,https://i.scdn.co/image/ab6761610000e5eb81f47f44084e0a09b5f0fa13,4q3ewBCX7sLwd24euuV69X
-Bad Bunny,99064487,100,"reggaeton, trap latino, urbano latino, latin",,2025-08-14T20:06:28Z,4q3ewBCX7sLwd24euuV69X,88.8,https://i.scdn.co/image/ab6761610000e5eb81f47f44084e0a09b5f0fa13,
-Kendrick Lamar,43179421,94,"hip hop, west coast hip hop",,2025-08-14T20:06:28Z,2YZyLoL8N0Wb9xBt1NhZWg,85.3,https://i.scdn.co/image/ab6761610000e5eb39ba6dcd4355c03de0b50918,
-Taylor Swift,141320162,99,,,2025-08-14T20:06:29Z,06HL4z0CvFAxyc27GXpf02,82.1,https://i.scdn.co/image/ab6761610000e5ebe672b5f553298dcdccb0e676,
-Foo Fighters,12777636,79,"rock, post-grunge, alternative rock, grunge",,2025-08-14T20:06:29Z,7jy3rLJdDQY21OgRLCZ9sD,73.9,https://i.scdn.co/image/ab6761610000e5eb07be1890ac379235723258de,
-Weezer,4461127,77,alternative rock,,2025-08-14T20:06:30Z,3jOstUTkEu2JkjvRdBA5Gu,70.8,https://i.scdn.co/image/ab6761610000e5eb3cd35451daa1b690cfbbb2d4,
-TEST_ARTIST,0,0,,,,test,0.0,,
-Weezer,4461127,77,alternative rock,,,,70.8,,3jOstUTkEu2JkjvRdBA5Gu
+artist_name,followers,popularity,genres,spotify_url,timestamp,artist_id,avg_top_track_pop,image_url,spotify_id,popularity_delta
+Bad Bunny,99064487,100,"reggaeton, trap latino, urbano latino, latin",,2025-08-14 05:47:00+00:00,4q3ewBCX7sLwd24euuV69X,88.8,,,0.0
+Bad Bunny,99064487,100,"reggaeton, trap latino, urbano latino, latin",,2025-08-14 05:53:00+00:00,4q3ewBCX7sLwd24euuV69X,88.8,,,0.0
+Bad Bunny,99064487,100,"reggaeton, trap latino, urbano latino, latin",,2025-08-14 06:05:00+00:00,4q3ewBCX7sLwd24euuV69X,88.8,,,0.0
+Bad Bunny,99064487,100,"reggaeton, trap latino, urbano latino, latin",,2025-08-14 06:07:00+00:00,4q3ewBCX7sLwd24euuV69X,88.8,,,0.0
+Bad Bunny,99064487,100,"reggaeton, trap latino, urbano latino, latin",,2025-08-14 06:11:00+00:00,4q3ewBCX7sLwd24euuV69X,88.8,,,0.0
+Bad Bunny,99064487,100,"reggaeton, trap latino, urbano latino, latin",,2025-08-14 18:20:00+00:00,4q3ewBCX7sLwd24euuV69X,88.8,https://i.scdn.co/image/ab6761610000e5eb81f47f44084e0a09b5f0fa13,,0.0
+Bad Bunny,99064487,100,"reggaeton, trap latino, urbano latino, latin",,2025-08-14 18:22:00+00:00,4q3ewBCX7sLwd24euuV69X,88.8,https://i.scdn.co/image/ab6761610000e5eb81f47f44084e0a09b5f0fa13,,0.0
+Bad Bunny,99064487,100,"reggaeton, trap latino, urbano latino, latin",,2025-08-14 18:48:00+00:00,4q3ewBCX7sLwd24euuV69X,88.8,https://i.scdn.co/image/ab6761610000e5eb81f47f44084e0a09b5f0fa13,,0.0
+Bad Bunny,99064487,100,"reggaeton, trap latino, urbano latino, latin",,2025-08-14 19:33:00+00:00,,88.8,https://i.scdn.co/image/ab6761610000e5eb81f47f44084e0a09b5f0fa13,4q3ewBCX7sLwd24euuV69X,0.0
+Bad Bunny,99064487,100,"reggaeton, trap latino, urbano latino, latin",,2025-08-14 20:06:00+00:00,4q3ewBCX7sLwd24euuV69X,88.8,https://i.scdn.co/image/ab6761610000e5eb81f47f44084e0a09b5f0fa13,,0.0
+Bad Bunny,99064487,100,"reggaeton, trap latino, urbano latino, latin",,2025-08-14 21:42:31.117724+00:00,,88.8,,4q3ewBCX7sLwd24euuV69X,
+Bad Bunny,99064487,100,"reggaeton, trap latino, urbano latino, latin",,2025-08-14 21:56:35+00:00,,88.8,,4q3ewBCX7sLwd24euuV69X,
+Bad Bunny,99064487,100,"reggaeton, trap latino, urbano latino, latin",,2025-08-14 22:24:37+00:00,,88.8,,4q3ewBCX7sLwd24euuV69X,
+Bad Bunny,99064487,100,"reggaeton, trap latino, urbano latino, latin",,2025-08-14 22:30:18+00:00,,88.8,,4q3ewBCX7sLwd24euuV69X,
+Foo Fighters,12765963,79,"rock, post-grunge, alternative rock, grunge",https://open.spotify.com/artist/7jy3rLJdDQY21OgRLCZ9sD,2025-08-09 00:11:00+00:00,,,,,0.0
+Foo Fighters,12777636,79,"rock, post-grunge, alternative rock, grunge",,2025-08-14 05:47:00+00:00,7jy3rLJdDQY21OgRLCZ9sD,74.0,,,0.0
+Foo Fighters,12777636,79,"rock, post-grunge, alternative rock, grunge",,2025-08-14 05:53:00+00:00,7jy3rLJdDQY21OgRLCZ9sD,74.0,,,0.0
+Foo Fighters,12777636,79,"rock, post-grunge, alternative rock, grunge",,2025-08-14 06:05:00+00:00,7jy3rLJdDQY21OgRLCZ9sD,74.0,,,0.0
+Foo Fighters,12777636,79,"rock, post-grunge, alternative rock, grunge",,2025-08-14 06:07:00+00:00,7jy3rLJdDQY21OgRLCZ9sD,74.0,,,0.0
+Foo Fighters,12777636,79,"rock, post-grunge, alternative rock, grunge",,2025-08-14 06:11:00+00:00,7jy3rLJdDQY21OgRLCZ9sD,74.0,,,0.0
+Foo Fighters,12777636,79,"rock, post-grunge, alternative rock, grunge",,2025-08-14 18:20:00+00:00,7jy3rLJdDQY21OgRLCZ9sD,73.9,https://i.scdn.co/image/ab6761610000e5eb07be1890ac379235723258de,,0.0
+Foo Fighters,12777636,79,"rock, post-grunge, alternative rock, grunge",,2025-08-14 18:22:00+00:00,7jy3rLJdDQY21OgRLCZ9sD,73.9,https://i.scdn.co/image/ab6761610000e5eb07be1890ac379235723258de,,0.0
+Foo Fighters,12777636,79,"rock, post-grunge, alternative rock, grunge",,2025-08-14 18:48:00+00:00,7jy3rLJdDQY21OgRLCZ9sD,73.9,https://i.scdn.co/image/ab6761610000e5eb07be1890ac379235723258de,,0.0
+Foo Fighters,12777636,79,"rock, post-grunge, alternative rock, grunge",,2025-08-14 19:30:00+00:00,,73.9,https://i.scdn.co/image/ab6761610000e5eb07be1890ac379235723258de,7jy3rLJdDQY21OgRLCZ9sD,0.0
+Foo Fighters,12777636,79,"rock, post-grunge, alternative rock, grunge",,2025-08-14 20:06:00+00:00,7jy3rLJdDQY21OgRLCZ9sD,73.9,https://i.scdn.co/image/ab6761610000e5eb07be1890ac379235723258de,,0.0
+Foo Fighters,12777636,79,"rock, post-grunge, alternative rock, grunge",,2025-08-14 21:42:31.117724+00:00,,73.9,,7jy3rLJdDQY21OgRLCZ9sD,
+Foo Fighters,12777636,79,"rock, post-grunge, alternative rock, grunge",,2025-08-14 21:56:35+00:00,,73.9,,7jy3rLJdDQY21OgRLCZ9sD,
+Foo Fighters,12777636,79,"rock, post-grunge, alternative rock, grunge",,2025-08-14 22:24:37+00:00,,73.9,,7jy3rLJdDQY21OgRLCZ9sD,
+Foo Fighters,12777636,79,"rock, post-grunge, alternative rock, grunge",,2025-08-14 22:30:18+00:00,,73.9,,7jy3rLJdDQY21OgRLCZ9sD,
+Kendrick Lamar,43179421,94,"hip hop, west coast hip hop",,2025-08-14 05:47:00+00:00,2YZyLoL8N0Wb9xBt1NhZWg,85.4,,,0.0
+Kendrick Lamar,43179421,94,"hip hop, west coast hip hop",,2025-08-14 05:53:00+00:00,2YZyLoL8N0Wb9xBt1NhZWg,85.4,,,0.0
+Kendrick Lamar,43179421,94,"hip hop, west coast hip hop",,2025-08-14 06:05:00+00:00,2YZyLoL8N0Wb9xBt1NhZWg,85.4,,,0.0
+Kendrick Lamar,43179421,94,"hip hop, west coast hip hop",,2025-08-14 06:07:00+00:00,2YZyLoL8N0Wb9xBt1NhZWg,85.4,,,0.0
+Kendrick Lamar,43179421,94,"hip hop, west coast hip hop",,2025-08-14 06:11:00+00:00,2YZyLoL8N0Wb9xBt1NhZWg,85.4,,,0.0
+Kendrick Lamar,43179421,94,"hip hop, west coast hip hop",,2025-08-14 18:20:00+00:00,2YZyLoL8N0Wb9xBt1NhZWg,85.3,https://i.scdn.co/image/ab6761610000e5eb39ba6dcd4355c03de0b50918,,0.0
+Kendrick Lamar,43179421,94,"hip hop, west coast hip hop",,2025-08-14 18:22:00+00:00,2YZyLoL8N0Wb9xBt1NhZWg,85.3,https://i.scdn.co/image/ab6761610000e5eb39ba6dcd4355c03de0b50918,,0.0
+Kendrick Lamar,43179421,94,"hip hop, west coast hip hop",,2025-08-14 18:48:00+00:00,2YZyLoL8N0Wb9xBt1NhZWg,85.3,https://i.scdn.co/image/ab6761610000e5eb39ba6dcd4355c03de0b50918,,0.0
+Kendrick Lamar,43179421,94,"hip hop, west coast hip hop",,2025-08-14 20:06:00+00:00,2YZyLoL8N0Wb9xBt1NhZWg,85.3,https://i.scdn.co/image/ab6761610000e5eb39ba6dcd4355c03de0b50918,,0.0
+Kendrick Lamar,43179421,94,"hip hop, west coast hip hop",,2025-08-14 21:42:31.117724+00:00,,85.3,,2YZyLoL8N0Wb9xBt1NhZWg,
+Kendrick Lamar,43179421,94,"hip hop, west coast hip hop",,2025-08-14 21:56:35+00:00,,85.3,,2YZyLoL8N0Wb9xBt1NhZWg,
+Kendrick Lamar,43179421,94,"hip hop, west coast hip hop",,2025-08-14 22:24:37+00:00,,85.3,,2YZyLoL8N0Wb9xBt1NhZWg,
+Kendrick Lamar,43179421,94,"hip hop, west coast hip hop",,2025-08-14 22:30:18+00:00,,85.3,,2YZyLoL8N0Wb9xBt1NhZWg,
+Taylor Swift,140951936,99,,https://open.spotify.com/artist/06HL4z0CvFAxyc27GXpf02,2025-08-07 17:41:00+00:00,,,,,0.0
+Taylor Swift,140951936,99,,https://open.spotify.com/artist/06HL4z0CvFAxyc27GXpf02,2025-08-07 17:42:00+00:00,,,,,0.0
+Taylor Swift,141096400,99,,https://open.spotify.com/artist/06HL4z0CvFAxyc27GXpf02,2025-08-11 02:09:00+00:00,,,,,0.0
+Taylor Swift,141096400,99,,https://open.spotify.com/artist/06HL4z0CvFAxyc27GXpf02,2025-08-11 02:33:00+00:00,,,,,0.0
+Taylor Swift,141320162,99,,,2025-08-14 05:47:00+00:00,06HL4z0CvFAxyc27GXpf02,81.9,,,0.0
+Taylor Swift,141320162,99,,,2025-08-14 05:53:00+00:00,06HL4z0CvFAxyc27GXpf02,81.9,,,0.0
+Taylor Swift,141320162,99,,,2025-08-14 06:05:00+00:00,06HL4z0CvFAxyc27GXpf02,81.9,,,0.0
+Taylor Swift,141320162,99,,,2025-08-14 06:07:00+00:00,06HL4z0CvFAxyc27GXpf02,81.9,,,0.0
+Taylor Swift,141320162,99,,,2025-08-14 06:11:00+00:00,06HL4z0CvFAxyc27GXpf02,81.9,,,0.0
+Taylor Swift,141320162,99,,,2025-08-14 18:20:00+00:00,06HL4z0CvFAxyc27GXpf02,82.1,https://i.scdn.co/image/ab6761610000e5ebe672b5f553298dcdccb0e676,,0.0
+Taylor Swift,141320162,99,,,2025-08-14 18:22:00+00:00,06HL4z0CvFAxyc27GXpf02,82.1,https://i.scdn.co/image/ab6761610000e5ebe672b5f553298dcdccb0e676,,0.0
+Taylor Swift,141320162,99,,,2025-08-14 18:48:00+00:00,06HL4z0CvFAxyc27GXpf02,82.1,https://i.scdn.co/image/ab6761610000e5ebe672b5f553298dcdccb0e676,,0.0
+Taylor Swift,141320162,99,,,2025-08-14 20:06:00+00:00,06HL4z0CvFAxyc27GXpf02,82.1,https://i.scdn.co/image/ab6761610000e5ebe672b5f553298dcdccb0e676,,0.0
+Taylor Swift,141320162,99,,,2025-08-14 21:42:31.117724+00:00,,82.1,,06HL4z0CvFAxyc27GXpf02,
+Taylor Swift,141320162,99,,,2025-08-14 21:56:35+00:00,,82.1,,06HL4z0CvFAxyc27GXpf02,
+Taylor Swift,141320162,99,,,2025-08-14 22:24:37+00:00,,82.1,,06HL4z0CvFAxyc27GXpf02,
+Taylor Swift,141320162,99,,,2025-08-14 22:30:18+00:00,,82.1,,06HL4z0CvFAxyc27GXpf02,
+Weezer,4461127,77,alternative rock,,2025-08-14 05:47:00+00:00,3jOstUTkEu2JkjvRdBA5Gu,70.8,,,0.0
+Weezer,4461127,77,alternative rock,,2025-08-14 05:53:00+00:00,3jOstUTkEu2JkjvRdBA5Gu,70.8,,,0.0
+Weezer,4461127,77,alternative rock,,2025-08-14 06:05:00+00:00,3jOstUTkEu2JkjvRdBA5Gu,70.8,,,0.0
+Weezer,4461127,77,alternative rock,,2025-08-14 06:07:00+00:00,3jOstUTkEu2JkjvRdBA5Gu,70.8,,,0.0
+Weezer,4461127,77,alternative rock,,2025-08-14 06:11:00+00:00,3jOstUTkEu2JkjvRdBA5Gu,70.8,,,0.0
+Weezer,4461127,77,alternative rock,,2025-08-14 18:20:00+00:00,3jOstUTkEu2JkjvRdBA5Gu,70.8,https://i.scdn.co/image/ab6761610000e5eb3cd35451daa1b690cfbbb2d4,,0.0
+Weezer,4461127,77,alternative rock,,2025-08-14 18:22:00+00:00,3jOstUTkEu2JkjvRdBA5Gu,70.8,https://i.scdn.co/image/ab6761610000e5eb3cd35451daa1b690cfbbb2d4,,0.0
+Weezer,4461127,77,alternative rock,,2025-08-14 18:48:00+00:00,3jOstUTkEu2JkjvRdBA5Gu,70.8,https://i.scdn.co/image/ab6761610000e5eb3cd35451daa1b690cfbbb2d4,,0.0
+Weezer,4461127,77,alternative rock,,2025-08-14 20:06:00+00:00,3jOstUTkEu2JkjvRdBA5Gu,70.8,https://i.scdn.co/image/ab6761610000e5eb3cd35451daa1b690cfbbb2d4,,0.0
+Weezer,4461127,77,alternative rock,,2025-08-14 21:42:31.117724+00:00,,70.8,,3jOstUTkEu2JkjvRdBA5Gu,
+Weezer,4461127,77,alternative rock,,2025-08-14 21:56:35+00:00,,70.8,,3jOstUTkEu2JkjvRdBA5Gu,
+Weezer,4461127,77,alternative rock,,2025-08-14 22:24:37+00:00,,70.8,,3jOstUTkEu2JkjvRdBA5Gu,
+Weezer,4461127,77,alternative rock,,2025-08-14 22:30:18+00:00,,70.8,,3jOstUTkEu2JkjvRdBA5Gu,

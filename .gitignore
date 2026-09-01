@@ -15,6 +15,7 @@ __pycache__/
 # logs & caches
 *.log
 runs.log
+.cache
 .cache/
 .ipynb_checkpoints/
 
